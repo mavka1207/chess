@@ -34,31 +34,29 @@ func (r *Room) Join(conn *websocket.Conn) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if len(r.Players) >= 2 {
-		conn.WriteMessage(websocket.TextMessage, []byte("Room full"))
-		conn.Close()
-		return
-	}
-
+	// Determine color
 	color := "white"
 	if len(r.Players) == 1 {
-		color = "black"
+		// Assign the color not currently taken
+		for _, existingColor := range r.Players {
+			if existingColor == "white" {
+				color = "black"
+			} else {
+				color = "white"
+			}
+		}
 	}
 	r.Players[conn] = color
-
 	log.Printf("Player joined room %s as %s", r.ID, color)
+
+	// Always start listening to the connection immediately
+	go r.handlePlayer(conn)
 
 	if len(r.Players) == 2 || (r.IsBotGame && len(r.Players) == 1) {
 		r.started = true
 		r.broadcastColors()
 		r.broadcastBoard("") // Initial board
 		r.notifyTurn()
-		if !r.IsBotGame {
-			go r.handleGame()
-		} else {
-			// In bot game, we only have one player connection to listen to
-			go r.handleGame()
-		}
 	}
 }
 
@@ -94,26 +92,27 @@ func (r *Room) broadcastBoard(lastMove string) {
 	}
 }
 
-func (r *Room) handleGame() {
-	for conn := range r.Players {
-		go func(c *websocket.Conn) {
-			defer func() {
-				r.mu.Lock()
-				delete(r.Players, c)
-				r.mu.Unlock()
-				c.Close()
-				log.Printf("Player disconnected from room %s. Remaining: %d", r.ID, len(r.Players))
-			}()
+func (r *Room) handlePlayer(conn *websocket.Conn) {
+	defer func() {
+		r.mu.Lock()
+		delete(r.Players, conn)
+		r.mu.Unlock()
+		conn.Close()
+		log.Printf("Player disconnected from room %s. Remaining: %d", r.ID, len(r.Players))
+	}()
 
-			for {
-				_, msg, err := c.ReadMessage()
-				if err != nil {
-					return
-				}
+	for {
+		_, msg, err := conn.ReadMessage()
+		if err != nil {
+			return
+		}
 
-				r.processMove(c, string(msg))
-			}
-		}(conn)
+		// Only process moves if the game has started
+		if !r.started && string(msg) != "RESTART" {
+			continue
+		}
+
+		r.processMove(conn, string(msg))
 	}
 }
 
