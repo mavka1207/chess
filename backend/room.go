@@ -31,7 +31,7 @@ func (gm *GameManager) matchmaking() {
 		player1 := <-gm.waitingRoom
 		player2 := <-gm.waitingRoom
 
-		roomID := uuid.New().String()
+		roomID := strings.ToUpper(uuid.New().String())
 		room := NewRoom(roomID)
 
 		gm.mu.Lock()
