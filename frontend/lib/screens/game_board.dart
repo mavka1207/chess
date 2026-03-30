@@ -26,12 +26,25 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _roomID = ModalRoute.of(context)!.settings.arguments as String?;
-    if (_roomID != null) {
-      _wsService = Provider.of<WebSocketService>(context, listen: false);
-      _wsService.connectToGame('ws://192.168.1.57:8080/rooms/$_roomID');
-      _setupListeners();
+    final args = ModalRoute.of(context)!.settings.arguments as String;
+    
+    // Support "ID:color" or just "ID"
+    if (args.contains(':')) {
+      final parts = args.split(':');
+      _roomID = parts[0];
+      _assignedColor = parts[1];
+    } else {
+      _roomID = args;
+      _assignedColor = null;
     }
+
+    _wsService = Provider.of<WebSocketService>(context, listen: false);
+    _setupListeners();
+    String wsUrl = 'ws://192.168.1.57:8080/rooms/$_roomID';
+    if (_assignedColor != null) {
+      wsUrl += '?color=$_assignedColor';
+    }
+    _wsService.connectToGame(wsUrl);
     _chess = chess_lib.Chess();
   }
 

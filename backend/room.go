@@ -94,6 +94,8 @@ func (gm *GameManager) HandleGame(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	requestedColor := r.URL.Query().Get("color")
+
 	gm.mu.Lock()
 	room, exists := gm.rooms[roomID]
 	gm.mu.Unlock()
@@ -110,5 +112,5 @@ func (gm *GameManager) HandleGame(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	room.Join(conn)
+	room.Join(conn, requestedColor)
 }

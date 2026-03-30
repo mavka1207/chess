@@ -22,12 +22,13 @@ class _LobbyScreenState extends State<LobbyScreen> {
       if (!mounted) return;
       
       final parts = message.split(':');
-      if (parts.length >= 2 && parts[0] == 'JOIN') {
+      if (parts.length >= 3 && parts[0] == 'JOIN') {
         final roomID = parts[1];
+        final assignedColor = parts[2];
         Navigator.pushReplacementNamed(
           context, 
           '/game', 
-          arguments: roomID,
+          arguments: '$roomID:$assignedColor',
         );
       }
     });

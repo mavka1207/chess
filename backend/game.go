@@ -30,22 +30,45 @@ func NewRoom(id string) *Room {
 	}
 }
 
-func (r *Room) Join(conn *websocket.Conn) {
+func (r *Room) Join(conn *websocket.Conn, requestedColor string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	// Determine color
-	color := "white"
-	if len(r.Players) == 1 {
-		// Assign the color not currently taken
-		for _, existingColor := range r.Players {
-			if existingColor == "white" {
-				color = "black"
-			} else {
-				color = "white"
+	color := ""
+	if requestedColor == "white" || requestedColor == "black" {
+		// Check if requested color is already taken
+		taken := false
+		for _, c := range r.Players {
+			if c == requestedColor {
+				taken = true
+				break
 			}
 		}
+		if !taken {
+			color = requestedColor
+		}
 	}
+
+	if color == "" {
+		if len(r.Players) == 0 {
+			color = "white"
+		} else if len(r.Players) == 1 {
+			// Take what's left
+			for _, takenColor := range r.Players {
+				if takenColor == "white" {
+					color = "black"
+				} else {
+					color = "white"
+				}
+			}
+		} else {
+			conn.WriteMessage(websocket.TextMessage, []byte("Room full"))
+			conn.Close()
+			return
+		}
+	}
+
 	r.Players[conn] = color
 	log.Printf("Player joined room %s as %s", r.ID, color)
 
