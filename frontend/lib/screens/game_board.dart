@@ -349,15 +349,15 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
     bool isWhitePiece = piece.color == chess_lib.Color.WHITE;
     return Center(
       child: Text(
-        _getPieceSymbol(piece.type),
+        _getPieceSymbol(piece.type, isWhitePiece),
         style: TextStyle(
           fontSize: size,
           color: isWhitePiece ? Colors.white : Colors.black,
           shadows: [
             Shadow(
-              color: isWhitePiece ? Colors.black45 : Colors.white54,
-              blurRadius: 2,
-              offset: const Offset(1, 1),
+              color: isWhitePiece ? Colors.black.withOpacity(0.5) : Colors.white.withOpacity(0.3),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
@@ -365,15 +365,27 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
     );
   }
 
-  String _getPieceSymbol(chess_lib.PieceType type) {
-    switch (type) {
-      case chess_lib.PieceType.PAWN: return "♟";
-      case chess_lib.PieceType.ROOK: return "♜";
-      case chess_lib.PieceType.KNIGHT: return "♞";
-      case chess_lib.PieceType.BISHOP: return "♝";
-      case chess_lib.PieceType.QUEEN: return "♛";
-      case chess_lib.PieceType.KING: return "♚";
-      default: return "";
+  String _getPieceSymbol(chess_lib.PieceType type, bool isWhite) {
+    if (isWhite) {
+      switch (type) {
+        case chess_lib.PieceType.PAWN: return "♙";
+        case chess_lib.PieceType.ROOK: return "♖";
+        case chess_lib.PieceType.KNIGHT: return "♘";
+        case chess_lib.PieceType.BISHOP: return "♗";
+        case chess_lib.PieceType.QUEEN: return "♕";
+        case chess_lib.PieceType.KING: return "♔";
+        default: return "";
+      }
+    } else {
+      switch (type) {
+        case chess_lib.PieceType.PAWN: return "♟";
+        case chess_lib.PieceType.ROOK: return "♜";
+        case chess_lib.PieceType.KNIGHT: return "♞";
+        case chess_lib.PieceType.BISHOP: return "♝";
+        case chess_lib.PieceType.QUEEN: return "♛";
+        case chess_lib.PieceType.KING: return "♚";
+        default: return "";
+      }
     }
   }
 

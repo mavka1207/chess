@@ -12,14 +12,14 @@ import (
 )
 
 type GameManager struct {
-	rooms      map[string]*Room
+	rooms       map[string]*Room
 	waitingRoom chan *websocket.Conn
-	mu         sync.Mutex
+	mu          sync.Mutex
 }
 
 func NewGameManager() *GameManager {
 	gm := &GameManager{
-		rooms:      make(map[string]*Room),
+		rooms:       make(map[string]*Room),
 		waitingRoom: make(chan *websocket.Conn, 10),
 	}
 	go gm.matchmaking()
@@ -39,11 +39,11 @@ func (gm *GameManager) matchmaking() {
 		gm.mu.Unlock()
 
 		log.Printf("Match found! Creating room %s\n", roomID)
-		
+
 		// Notify both players of the room ID and their colors
 		player1.WriteMessage(websocket.TextMessage, []byte("JOIN:"+roomID+":white"))
 		player2.WriteMessage(websocket.TextMessage, []byte("JOIN:"+roomID+":black"))
-		
+
 		// Note: Don't close immediately, let the client's navigation trigger closure
 	}
 }
