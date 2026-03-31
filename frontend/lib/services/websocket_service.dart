@@ -60,9 +60,14 @@ class WebSocketService {
     }
   }
 
+  void prepareNewSession() {
+    disconnectLobby();
+    disconnectGame();
+  }
+
   void dispose() {
-    _lobbyChannel?.sink.close(status.normalClosure);
-    _gameChannel?.sink.close(status.normalClosure);
+    disconnectLobby();
+    disconnectGame();
     _roomController.close();
     _gameController.close();
   }
