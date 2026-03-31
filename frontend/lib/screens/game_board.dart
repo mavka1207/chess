@@ -185,10 +185,18 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
         : (isVictory ? const Color(0xFF27AE60) : const Color(0xFFE94560)); // Green for win, Pink/Red for loss
 
     // Friendly reason text
-    String friendlyReason = reason;
-    if (reason.contains("1-0")) friendlyReason = reason.replaceFirst("1-0", "White Wins");
-    if (reason.contains("0-1")) friendlyReason = reason.replaceFirst("0-1", "Black Wins");
-    if (reason.contains("1/2-1/2")) friendlyReason = reason.replaceFirst("1/2-1/2", "Draw");
+    String friendlyReason = "";
+    String method = reason.split(" by ").last;
+    
+    if (isDraw) {
+      friendlyReason = "The game ended in a draw by $method";
+    } else if (isVictory) {
+      String opponentColor = _myColor == "white" ? "Black" : "White";
+      friendlyReason = "You defeated $opponentColor by $method";
+    } else {
+      String winnerColor = reason.contains("1-0") ? "White" : "Black";
+      friendlyReason = "$winnerColor Wins by $method";
+    }
 
     showDialog(
       context: context,
@@ -486,6 +494,7 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
 
   Widget _buildSquare(String square, bool isDark, int visualRow, int visualCol) {
     final isSelected = _selectedSquare == square;
+    final isLastMove = square == _lastMoveFrom || square == _lastMoveTo;
     final isPossible = _possibleMoves.contains(square);
     final hasPieceOnTarget = _chess.get(square) != null;
     
@@ -506,7 +515,9 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
           ),
         ),
         child: Container(
-          color: isSelected ? Colors.yellow.withValues(alpha: 0.4) : Colors.transparent,
+          color: isSelected 
+              ? Colors.yellow.withValues(alpha: 0.4) 
+              : (isLastMove ? Colors.black.withValues(alpha: 0.15) : Colors.transparent),
           child: Stack(
             children: [
               // Coordinates labels on specific squares
