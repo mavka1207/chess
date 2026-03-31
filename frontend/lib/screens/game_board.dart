@@ -30,6 +30,16 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
   String? _assignedColor;
   bool _isInitialized = false;
 
+  late ImageProvider _lightSquareImg;
+  late ImageProvider _darkSquareImg;
+
+  @override
+  void initState() {
+    super.initState();
+    _lightSquareImg = const AssetImage('assets/board/light_square.png');
+    _darkSquareImg = const AssetImage('assets/board/dark_square.png');
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -79,6 +89,9 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
           } else if (message.startsWith("MOVES:")) {
             _moveHistory = message.substring(6);
           } else if (message == "RESTARTED") {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
             _moveHistory = "";
             _lastMoveFrom = null;
             _lastMoveTo = null;
@@ -152,6 +165,31 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
   }
 
   void _showGameOver(String reason) {
+    bool isVictory = false;
+    bool isDraw = reason.contains("1/2-1/2");
+    
+    if (!isDraw) {
+      if (reason.contains("1-0")) {
+        isVictory = _myColor == "white";
+      } else if (reason.contains("0-1")) {
+        isVictory = _myColor == "black";
+      }
+    }
+
+    final String title = isDraw ? "Draw" : (isVictory ? "Victory!" : "Defeat");
+    final IconData icon = isDraw 
+        ? Icons.handshake_outlined 
+        : (isVictory ? Icons.emoji_events : Icons.sentiment_very_dissatisfied);
+    final Color mainColor = isDraw 
+        ? const Color(0xFFF1C40F) // Yellow for draw
+        : (isVictory ? const Color(0xFF27AE60) : const Color(0xFFE94560)); // Green for win, Pink/Red for loss
+
+    // Friendly reason text
+    String friendlyReason = reason;
+    if (reason.contains("1-0")) friendlyReason = reason.replaceFirst("1-0", "White Wins");
+    if (reason.contains("0-1")) friendlyReason = reason.replaceFirst("0-1", "Black Wins");
+    if (reason.contains("1/2-1/2")) friendlyReason = reason.replaceFirst("1/2-1/2", "Draw");
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -159,7 +197,7 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
         filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
         child: Dialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-          backgroundColor: const Color(0xFF262421).withOpacity(0.95),
+          backgroundColor: const Color(0xFF262421).withValues(alpha: 0.95),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
             child: Column(
@@ -168,28 +206,28 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE94560).withOpacity(0.1),
+                    color: mainColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.emoji_events_outlined, 
+                  child: Icon(
+                    icon, 
                     size: 48, 
-                    color: Color(0xFFE94560),
+                    color: mainColor,
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Text(
-                  "Game Over", 
+                Text(
+                  title, 
                   style: TextStyle(
-                    fontSize: 26, 
+                    fontSize: 28, 
                     fontWeight: FontWeight.bold, 
-                    color: Colors.white,
+                    color: mainColor,
                     letterSpacing: 0.5,
                   ),
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  reason, 
+                  friendlyReason, 
                   textAlign: TextAlign.center, 
                   style: const TextStyle(
                     fontSize: 16, 
@@ -203,7 +241,7 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
                   height: 52,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE94560),
+                      backgroundColor: const Color(0xFF27AE60), // Match success green
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -211,6 +249,26 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
                         fontSize: 16, 
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.1,
+                      ),
+                    ),
+                    onPressed: () {
+                      _wsService.sendMove("RESTART");
+                    },
+                    child: const Text("REMATCH"),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                      foregroundColor: Colors.white70,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      textStyle: const TextStyle(
+                        fontSize: 16, 
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     onPressed: () {
@@ -279,7 +337,7 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: isMyTurn ? Colors.white.withOpacity(0.05) : Colors.transparent,
+        color: isMyTurn ? Colors.white.withValues(alpha: 0.05) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -392,7 +450,7 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
       decoration: BoxDecoration(
         border: Border.all(color: const Color(0xFF33312E), width: 2),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 20, spreadRadius: 5),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 20, spreadRadius: 5),
         ],
       ),
       child: Stack(
@@ -443,12 +501,12 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
       child: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
-            image: AssetImage(isDark ? 'assets/board/dark_square.png' : 'assets/board/light_square.png'),
+            image: isDark ? _darkSquareImg : _lightSquareImg,
             fit: BoxFit.cover,
           ),
         ),
         child: Container(
-          color: isSelected ? Colors.yellow.withOpacity(0.4) : Colors.transparent,
+          color: isSelected ? Colors.yellow.withValues(alpha: 0.4) : Colors.transparent,
           child: Stack(
             children: [
               // Coordinates labels on specific squares
@@ -470,7 +528,7 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
                 ),
               
               // Piece
-              Center(child: _buildPiece(square)),
+              Center(child: RepaintBoundary(child: _buildPiece(square))),
 
               // Possible move dot or ring
               if (isPossible)
@@ -480,13 +538,13 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
                         width: 40, height: 40,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.black.withOpacity(0.2), width: 4),
+                          border: Border.all(color: Colors.black.withValues(alpha: 0.2), width: 4),
                         ),
                       )
                     : Container(
                         width: 12, height: 12,
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.2),
+                          color: Colors.black.withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
                       ),
