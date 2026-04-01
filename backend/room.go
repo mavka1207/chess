@@ -14,14 +14,14 @@ import (
 
 type GameManager struct {
 	rooms       map[string]*Room
-	waitingRoom chan *websocket.Conn
+	waitingRoom []*websocket.Conn
 	mu          sync.Mutex
 }
 
 func NewGameManager() *GameManager {
 	gm := &GameManager{
 		rooms:       make(map[string]*Room),
-		waitingRoom: make(chan *websocket.Conn, 10),
+		waitingRoom: make([]*websocket.Conn, 0),
 	}
 	go gm.matchmaking()
 	return gm
@@ -29,23 +29,39 @@ func NewGameManager() *GameManager {
 
 func (gm *GameManager) matchmaking() {
 	for {
-		player1 := <-gm.waitingRoom
-		// Check if player1 is still connected
-		if err := player1.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(time.Second)); err != nil {
-			log.Println("Skipping disconnected player1 in matchmaking")
-			player1.Close()
+		time.Sleep(1 * time.Second)
+		gm.mu.Lock()
+
+		if len(gm.waitingRoom) < 2 {
+			gm.mu.Unlock()
 			continue
 		}
 
-		player2 := <-gm.waitingRoom
+		// Take first two players
+		player1 := gm.waitingRoom[0]
+		player2 := gm.waitingRoom[1]
+
+		// Check if player1 is still connected
+		if err := player1.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(time.Second)); err != nil {
+			log.Println("Skipping disconnected player1 in matchmaking")
+			gm.waitingRoom = gm.waitingRoom[1:]
+			player1.Close()
+			gm.mu.Unlock()
+			continue
+		}
+
 		// Check if player2 is still connected
 		if err := player2.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(time.Second)); err != nil {
 			log.Println("Skipping disconnected player2 in matchmaking")
+			gm.waitingRoom = append(gm.waitingRoom[:1], gm.waitingRoom[2:]...)
 			player2.Close()
-			// Put player1 back to wait for another opponent
-			go func() { gm.waitingRoom <- player1 }()
+			gm.mu.Unlock()
 			continue
 		}
+
+		// Both are good! Remove them from waiting room
+		gm.waitingRoom = gm.waitingRoom[2:]
+		gm.mu.Unlock()
 
 		roomID := strings.ToUpper(uuid.New().String())
 		room := NewRoom(roomID)
@@ -60,12 +76,29 @@ func (gm *GameManager) matchmaking() {
 		err1 := player1.WriteMessage(websocket.TextMessage, []byte("JOIN:"+roomID+":white"))
 		err2 := player2.WriteMessage(websocket.TextMessage, []byte("JOIN:"+roomID+":black"))
 
-		if err1 != nil {
-			log.Printf("Failed to notify player 1: %v\n", err1)
-			// Match failed, room will be cleaned up eventually or remain empty
-		}
-		if err2 != nil {
-			log.Printf("Failed to notify player 2: %v\n", err2)
+		if err1 != nil || err2 != nil {
+			if err1 != nil {
+				log.Printf("Failed to notify player 1: %v\n", err1)
+			} else {
+				// Player 1 successfully notified but Player 2 failed. Put P1 back.
+				gm.mu.Lock()
+				gm.waitingRoom = append([]*websocket.Conn{player1}, gm.waitingRoom...)
+				gm.mu.Unlock()
+			}
+			
+			if err2 != nil {
+				log.Printf("Failed to notify player 2: %v\n", err2)
+			} else {
+				// Player 2 successfully notified but Player 1 failed. Put P2 back.
+				gm.mu.Lock()
+				gm.waitingRoom = append([]*websocket.Conn{player2}, gm.waitingRoom...)
+				gm.mu.Unlock()
+			}
+			// Cancel this match
+			gm.mu.Lock()
+			delete(gm.rooms, roomID)
+			gm.mu.Unlock()
+			continue
 		}
 	}
 }
@@ -76,9 +109,24 @@ func (gm *GameManager) HandleLobby(w http.ResponseWriter, r *http.Request) {
 		log.Println("Upgrade error:", err)
 		return
 	}
+	
+	gm.mu.Lock()
+	gm.waitingRoom = append(gm.waitingRoom, conn)
+	gm.mu.Unlock()
 	log.Println("Player entered lobby")
 	
-	gm.waitingRoom <- conn
+	defer func() {
+		gm.mu.Lock()
+		log.Println("Player left lobby (cleaning queue)")
+		for i, c := range gm.waitingRoom {
+			if c == conn {
+				gm.waitingRoom = append(gm.waitingRoom[:i], gm.waitingRoom[i+1:]...)
+				break
+			}
+		}
+		gm.mu.Unlock()
+		conn.Close()
+	}()
 
 	// Wait for disconnection/joining game
 	for {

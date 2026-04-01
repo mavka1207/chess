@@ -151,10 +151,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
               },
               child: const Text("RESTART", style: TextStyle(color: Color(0xFFE94560), fontWeight: FontWeight.bold)),
             ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text("CLOSE", style: TextStyle(color: Colors.white54)),
-            ),
           ],
         ),
       ),

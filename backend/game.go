@@ -226,8 +226,6 @@ func (r *Room) makeBotMove() {
 	moveStr := move.String()
 	r.mu.Unlock()
 
-	log.Printf("Bot making move: %s", moveStr)
-	
 	// We call processMove but we need a way to pass "nil" connection or bypass the check
 	r.applyBotMove(moveStr)
 }
