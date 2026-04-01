@@ -39,23 +39,21 @@ class _LobbyScreenState extends State<LobbyScreen> {
     _wsService.prepareNewSession(); // Clear any stale connections
     _wsService.connectToLobby('ws://192.168.1.57:8080/rooms');
     
-    // Use a short delay to ignore immediate stale messages and ensure clean state
-    Future.delayed(const Duration(milliseconds: 500), () {
+    // Start listening immediately - the WebSocketService connection tracking handles safety
+    if (!mounted) return;
+    _roomSubscription = _wsService.roomStream.listen((message) {
       if (!mounted) return;
-      _roomSubscription = _wsService.roomStream.listen((message) {
-        if (!mounted) return;
-        
-        final parts = message.split(':');
-        if (parts.length >= 3 && parts[0] == 'JOIN') {
-          final roomID = parts[1];
-          final assignedColor = parts[2];
-          Navigator.pushReplacementNamed(
-            context, 
-            '/game', 
-            arguments: '$roomID:$assignedColor',
-          );
-        }
-      });
+      
+      final parts = message.split(':');
+      if (parts.length >= 3 && parts[0] == 'JOIN') {
+        final roomID = parts[1];
+        final assignedColor = parts[2];
+        Navigator.pushReplacementNamed(
+          context, 
+          '/game', 
+          arguments: '$roomID:$assignedColor',
+        );
+      }
     });
   }
 

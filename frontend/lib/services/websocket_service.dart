@@ -8,6 +8,9 @@ class WebSocketService {
   String? _currentLobbyUrl;
   String? _currentGameUrl;
   
+  int _lobbyConnectionId = 0;
+  int _gameConnectionId = 0;
+  
   final StreamController<String> _roomController = StreamController<String>.broadcast();
   final StreamController<String> _gameController = StreamController<String>.broadcast();
 
@@ -18,9 +21,14 @@ class WebSocketService {
     if (_currentLobbyUrl == url && _lobbyChannel != null) return;
     disconnectLobby();
     _currentLobbyUrl = url;
+    _lobbyConnectionId++;
+    final thisId = _lobbyConnectionId;
+    
     _lobbyChannel = WebSocketChannel.connect(Uri.parse(url));
     _lobbyChannel!.stream.listen((message) {
-      _roomController.add(message.toString());
+      if (thisId == _lobbyConnectionId) {
+        _roomController.add(message.toString());
+      }
     }, onDone: () {
       // Lobby connection closed
     }, onError: (error) {
@@ -38,9 +46,14 @@ class WebSocketService {
     if (_currentGameUrl == url && _gameChannel != null) return;
     disconnectGame();
     _currentGameUrl = url;
+    _gameConnectionId++;
+    final thisId = _gameConnectionId;
+    
     _gameChannel = WebSocketChannel.connect(Uri.parse(url));
     _gameChannel!.stream.listen((message) {
-      _gameController.add(message.toString());
+      if (thisId == _gameConnectionId) {
+        _gameController.add(message.toString());
+      }
     }, onDone: () {
       // Game connection closed
     }, onError: (error) {

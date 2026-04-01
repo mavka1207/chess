@@ -95,9 +95,6 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
           } else if (message.startsWith("MOVES:")) {
             _moveHistory = message.substring(6);
           } else if (message == "RESTARTED") {
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            }
             _moveHistory = "";
             _lastMoveFrom = null;
             _lastMoveTo = null;
@@ -346,6 +343,7 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
                       shadowColor: const Color(0xFFE94560).withValues(alpha: 0.4),
                     ),
                     onPressed: _opponentLeft ? null : () {
+                      Navigator.of(context).pop();
                       _wsService.sendMove("RESTART");
                     },
                     child: Text(
