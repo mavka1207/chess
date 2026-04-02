@@ -37,7 +37,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     
     _wsService = Provider.of<WebSocketService>(context, listen: false);
     _wsService.prepareNewSession(); // Clear any stale connections
-    _wsService.connectToLobby('ws://192.168.1.57:8080/rooms');
+    _wsService.connectToLobby('wss://colory-kaci-dreadingly.ngrok-free.dev/rooms');
     
     // Start listening immediately - the WebSocketService connection tracking handles safety
     if (!mounted) return;

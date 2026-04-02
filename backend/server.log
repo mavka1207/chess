@@ -1,0 +1,213 @@
+2026/04/02 14:58:42 Server starting on port 8080
+2026/04/02 14:59:28 Player entered lobby
+2026/04/02 14:59:32 Player entered lobby
+2026/04/02 14:59:32 Match found! Creating room 6BC19865-9412-4D6D-961A-DAD8A044C374
+2026/04/02 14:59:32 Failed to notify player 1: websocket: close sent
+2026/04/02 14:59:32 Player joined room 6BC19865-9412-4D6D-961A-DAD8A044C374 as black
+2026/04/02 14:59:35 [-] DISCONNECTED: Player left room 6BC19865-9412-4D6D-961A-DAD8A044C374. (Remaining: 0)
+2026/04/02 14:59:36 Player entered lobby
+2026/04/02 15:00:23 Player entered lobby
+2026/04/02 15:00:23 Match found! Creating room EB2B0451-89D0-47E1-B47A-5FB25E79AAA0
+2026/04/02 15:00:23 Failed to notify player 1: websocket: close sent
+2026/04/02 15:00:23 Player joined room EB2B0451-89D0-47E1-B47A-5FB25E79AAA0 as black
+2026/04/02 15:00:25 [-] DISCONNECTED: Player left room EB2B0451-89D0-47E1-B47A-5FB25E79AAA0. (Remaining: 0)
+2026/04/02 15:00:25 Player entered lobby
+2026/04/02 15:00:32 Player entered lobby
+2026/04/02 15:00:32 Match found! Creating room AFA5DCFF-9228-457F-9CBE-E3AB31F2FBE9
+2026/04/02 15:00:32 Failed to notify player 1: websocket: close sent
+2026/04/02 15:00:32 Player joined room AFA5DCFF-9228-457F-9CBE-E3AB31F2FBE9 as black
+2026/04/02 15:00:35 [-] DISCONNECTED: Player left room AFA5DCFF-9228-457F-9CBE-E3AB31F2FBE9. (Remaining: 0)
+2026/04/02 15:00:36 Player entered lobby
+2026/04/02 15:16:48 Player entered lobby
+2026/04/02 15:16:48 Match found! Creating room 8C061311-2DB5-49BA-896D-14413C93B6DB
+2026/04/02 15:16:48 Failed to notify player 1: websocket: close sent
+2026/04/02 15:16:48 Player joined room 8C061311-2DB5-49BA-896D-14413C93B6DB as black
+2026/04/02 15:16:51 [-] DISCONNECTED: Player left room 8C061311-2DB5-49BA-896D-14413C93B6DB. (Remaining: 0)
+2026/04/02 15:16:54 Player entered lobby
+2026/04/02 15:16:57 Player entered lobby
+2026/04/02 15:16:57 Match found! Creating room 5EAE68C4-5089-4902-B518-3CCB4858FBE2
+2026/04/02 15:16:57 Player joined room 5EAE68C4-5089-4902-B518-3CCB4858FBE2 as white
+2026/04/02 15:16:58 Player joined room 5EAE68C4-5089-4902-B518-3CCB4858FBE2 as black
+2026/04/02 15:24:51 Game restarted in room 5EAE68C4-5089-4902-B518-3CCB4858FBE2
+2026/04/02 15:24:52 [-] DISCONNECTED: Player left room 5EAE68C4-5089-4902-B518-3CCB4858FBE2. (Remaining: 1)
+2026/04/02 15:24:52 [-] DISCONNECTED: Player left room 5EAE68C4-5089-4902-B518-3CCB4858FBE2. (Remaining: 0)
+2026/04/02 15:25:26 Practice room created: 7B2CB9_BOT
+2026/04/02 15:25:26 Player joined room 7B2CB9_BOT as white
+2026/04/02 15:25:30 Bot making move: f7f6
+2026/04/02 15:25:35 Bot making move: b8c6
+2026/04/02 15:25:39 Bot making move: d7d5
+2026/04/02 15:25:42 Bot making move: d8d7
+2026/04/02 15:25:46 Bot making move: g8h6
+2026/04/02 15:25:50 Bot making move: c7c6
+2026/04/02 15:25:55 Bot making move: f8e7
+2026/04/02 15:25:59 Bot making move: d7f5
+2026/04/02 15:26:03 Bot making move: h8g8
+2026/04/02 15:26:08 Bot making move: a8a3
+2026/04/02 15:28:35 Practice room created: 3EF562_BOT
+2026/04/02 15:28:35 Player joined room 3EF562_BOT as white
+2026/04/02 15:28:38 [-] DISCONNECTED: Player left room 7B2CB9_BOT. (Remaining: 0)
+2026/04/02 15:28:39 Bot making move: f7f5
+2026/04/02 15:28:43 Bot making move: h7h5
+2026/04/02 15:29:53 Bot making move: a7a6
+2026/04/02 15:29:58 [-] DISCONNECTED: Player left room 3EF562_BOT. (Remaining: 0)
+2026/04/02 15:30:00 Player entered lobby
+2026/04/02 15:30:07 Private room created: 416075
+2026/04/02 15:30:07 Player joined room 416075 as white
+2026/04/02 15:30:12 [-] DISCONNECTED: Player left room 416075. (Remaining: 0)
+2026/04/02 15:30:13 Practice room created: 99F744_BOT
+2026/04/02 15:30:13 Player joined room 99F744_BOT as white
+2026/04/02 15:30:17 Bot making move: d7d6
+2026/04/02 15:30:20 [-] DISCONNECTED: Player left room 99F744_BOT. (Remaining: 0)
+2026/04/02 15:59:24 Player entered lobby
+2026/04/02 15:59:24 Match found! Creating room 0CCD4A1D-98F5-4090-B744-B9B5CC6AFEBB
+2026/04/02 15:59:24 Failed to notify player 1: websocket: close sent
+2026/04/02 15:59:24 Player joined room 0CCD4A1D-98F5-4090-B744-B9B5CC6AFEBB as black
+2026/04/02 15:59:27 [-] DISCONNECTED: Player left room 0CCD4A1D-98F5-4090-B744-B9B5CC6AFEBB. (Remaining: 0)
+2026/04/02 15:59:27 Practice room created: DFE4DD_BOT
+2026/04/02 15:59:27 Player joined room DFE4DD_BOT as white
+2026/04/02 15:59:31 Bot making move: a7a6
+2026/04/02 15:59:32 [-] DISCONNECTED: Player left room DFE4DD_BOT. (Remaining: 0)
+2026/04/02 16:25:46 Practice room created: 76618F_BOT
+2026/04/02 16:25:46 Player joined room 76618F_BOT as white
+2026/04/02 16:25:52 Bot making move: f7f6
+2026/04/02 16:26:00 Bot making move: c7c6
+2026/04/02 16:26:15 Bot making move: c6c5
+2026/04/02 16:26:21 Bot making move: b8c6
+2026/04/02 16:26:33 Bot making move: e7e5
+2026/04/02 16:27:09 Bot making move: f8c5
+2026/04/02 16:27:19 [-] DISCONNECTED: Player left room 76618F_BOT. (Remaining: 0)
+2026/04/02 16:27:28 Player entered lobby
+2026/04/02 16:27:58 Player entered lobby
+2026/04/02 16:27:58 Match found! Creating room 80280026-B911-451C-82C9-707653B9EA25
+2026/04/02 16:27:58 Failed to notify player 1: websocket: close sent
+2026/04/02 16:27:58 Player joined room 80280026-B911-451C-82C9-707653B9EA25 as black
+2026/04/02 16:28:23 [-] DISCONNECTED: Player left room 80280026-B911-451C-82C9-707653B9EA25. (Remaining: 0)
+2026/04/02 16:28:24 Player entered lobby
+2026/04/02 16:28:36 Player entered lobby
+2026/04/02 16:28:36 Match found! Creating room E46B4C9F-08C0-4B38-BA2E-D6844E0BDFF4
+2026/04/02 16:28:36 Failed to notify player 1: websocket: close sent
+2026/04/02 16:28:37 Player joined room E46B4C9F-08C0-4B38-BA2E-D6844E0BDFF4 as black
+2026/04/02 16:28:40 Game restarted in room E46B4C9F-08C0-4B38-BA2E-D6844E0BDFF4
+2026/04/02 16:28:48 [-] DISCONNECTED: Player left room E46B4C9F-08C0-4B38-BA2E-D6844E0BDFF4. (Remaining: 0)
+2026/04/02 16:28:50 Private room created: B9E981
+2026/04/02 16:28:50 Player joined room B9E981 as white
+2026/04/02 16:28:53 [-] DISCONNECTED: Player left room B9E981. (Remaining: 0)
+2026/04/02 16:28:57 Practice room created: E048D2_BOT
+2026/04/02 16:28:57 Player joined room E048D2_BOT as white
+2026/04/02 16:29:01 Bot making move: h7h5
+2026/04/02 16:29:03 Game restarted in room E048D2_BOT
+2026/04/02 16:29:08 Bot making move: g8f6
+2026/04/02 16:29:13 Bot making move: b8a6
+2026/04/02 16:29:16 Bot making move: d7d5
+2026/04/02 16:29:19 Bot making move: f6g4
+2026/04/02 16:29:22 Bot making move: a6b8
+2026/04/02 16:29:38 Bot making move: c7c6
+2026/04/02 16:29:44 Bot making move: a7a5
+2026/04/02 16:29:50 Bot making move: g4f2
+2026/04/02 16:29:54 Bot making move: b8d7
+2026/04/02 16:29:58 Bot making move: h8g8
+2026/04/02 16:30:01 Bot making move: g7g6
+2026/04/02 16:30:06 Bot making move: e8f7
+2026/04/02 16:30:10 Bot making move: a8a7
+2026/04/02 16:30:14 Bot making move: a7c7
+2026/04/02 16:30:21 Bot making move: g8d8
+2026/04/02 16:30:25 Bot making move: c6c5
+2026/04/02 16:30:29 Bot making move: f7e6
+2026/04/02 16:30:32 Bot making move: d8f8
+2026/04/02 16:30:36 Bot making move: f8g8
+2026/04/02 16:30:39 Bot making move: c7g7
+2026/04/02 16:30:46 Bot making move: c5c4
+2026/04/02 16:30:50 Bot making move: c4c3
+2026/04/02 16:30:53 Bot making move: a5a4
+2026/04/02 16:30:58 Bot making move: e6e5
+2026/04/02 16:31:03 Bot making move: e5e4
+2026/04/02 16:31:07 Bot making move: g7a7
+2026/04/02 16:31:12 Bot making move: e4f5
+2026/04/02 16:31:15 Bot making move: c8d7
+2026/04/02 16:31:19 Bot making move: f5f6
+2026/04/02 16:31:23 Bot making move: d7c6
+2026/04/02 16:31:28 Bot making move: f6f5
+2026/04/02 16:31:31 Bot making move: f5e6
+2026/04/02 16:31:34 Bot making move: e6f6
+2026/04/02 16:31:37 Bot making move: f6g7
+2026/04/02 16:31:42 Bot making move: g7g6
+2026/04/02 16:31:46 Bot making move: g6h7
+2026/04/02 16:31:49 Bot making move: h7g7
+2026/04/02 16:31:52 Bot making move: g7f6
+2026/04/02 16:31:55 Bot making move: f6e6
+2026/04/02 16:31:59 Bot making move: e6f6
+2026/04/02 16:32:03 Bot making move: f6g7
+2026/04/02 16:32:06 Bot making move: g7f6
+2026/04/02 16:32:10 Bot making move: f6g7
+2026/04/02 16:32:19 Bot making move: g7h7
+2026/04/02 16:32:24 Bot making move: h7g6
+2026/04/02 16:32:35 Bot making move: g6f5
+2026/04/02 16:32:41 Bot making move: f5g6
+2026/04/02 16:32:50 Saving game E048D2_BOT: 1/2-1/2 by Stalemate
+2026/04/02 16:33:50 Game restarted in room E048D2_BOT
+2026/04/02 16:34:02 Bot making move: h7h6
+2026/04/02 16:34:04 Game restarted in room E048D2_BOT
+2026/04/02 16:34:09 [-] DISCONNECTED: Player left room E048D2_BOT. (Remaining: 0)
+2026/04/02 16:34:28 Player entered lobby
+2026/04/02 16:37:02 Player entered lobby
+2026/04/02 16:37:02 Match found! Creating room 5E950239-14FE-429F-B5AB-3A0393AC5242
+2026/04/02 16:37:02 Failed to notify player 1: websocket: close sent
+2026/04/02 16:37:02 Player joined room 5E950239-14FE-429F-B5AB-3A0393AC5242 as black
+2026/04/02 16:37:15 [-] DISCONNECTED: Player left room 5E950239-14FE-429F-B5AB-3A0393AC5242. (Remaining: 0)
+2026/04/02 16:37:20 Private room created: 8988CE
+2026/04/02 16:37:20 Player joined room 8988CE as white
+2026/04/02 16:37:26 [-] DISCONNECTED: Player left room 8988CE. (Remaining: 0)
+2026/04/02 16:48:59 Player entered lobby
+2026/04/02 16:49:05 Player entered lobby
+2026/04/02 16:49:05 Match found! Creating room 50DCCA36-C595-4ABC-A566-B5D2DE997C0E
+2026/04/02 16:49:05 Player joined room 50DCCA36-C595-4ABC-A566-B5D2DE997C0E as black
+2026/04/02 16:49:05 Player joined room 50DCCA36-C595-4ABC-A566-B5D2DE997C0E as white
+2026/04/02 16:50:22 [-] DISCONNECTED: Player left room 50DCCA36-C595-4ABC-A566-B5D2DE997C0E. (Remaining: 1)
+2026/04/02 16:52:02 [-] DISCONNECTED: Player left room 50DCCA36-C595-4ABC-A566-B5D2DE997C0E. (Remaining: 0)
+2026/04/02 16:52:05 Player entered lobby
+2026/04/02 16:52:17 Player entered lobby
+2026/04/02 16:52:17 Match found! Creating room B323E481-0360-48FD-B9C0-37335C0FFE88
+2026/04/02 16:52:17 Failed to notify player 1: websocket: close sent
+2026/04/02 16:52:17 Player joined room B323E481-0360-48FD-B9C0-37335C0FFE88 as black
+2026/04/02 16:52:30 [-] DISCONNECTED: Player left room B323E481-0360-48FD-B9C0-37335C0FFE88. (Remaining: 0)
+2026/04/02 16:52:32 Player entered lobby
+2026/04/02 16:52:51 Player entered lobby
+2026/04/02 16:52:51 Match found! Creating room 01C16C6A-9D5D-4121-8473-2032B64CF2E3
+2026/04/02 16:52:51 Player joined room 01C16C6A-9D5D-4121-8473-2032B64CF2E3 as white
+2026/04/02 16:52:51 Player joined room 01C16C6A-9D5D-4121-8473-2032B64CF2E3 as black
+2026/04/02 16:54:46 Player entered lobby
+2026/04/02 16:54:54 Private room created: F951E0
+2026/04/02 16:54:55 Player joined room F951E0 as white
+2026/04/02 16:54:59 [-] DISCONNECTED: Player left room F951E0. (Remaining: 0)
+2026/04/02 16:55:03 Practice room created: 275393_BOT
+2026/04/02 16:55:03 Player joined room 275393_BOT as white
+2026/04/02 16:55:07 Bot making move: h7h6
+2026/04/02 16:55:08 [-] DISCONNECTED: Player left room 275393_BOT. (Remaining: 0)
+2026/04/02 16:57:50 [-] DISCONNECTED: Player left room 01C16C6A-9D5D-4121-8473-2032B64CF2E3. (Remaining: 1)
+2026/04/02 16:57:54 [-] DISCONNECTED: Player left room 01C16C6A-9D5D-4121-8473-2032B64CF2E3. (Remaining: 0)
+2026/04/02 16:57:56 Practice room created: 4714E2_BOT
+2026/04/02 16:57:56 Player joined room 4714E2_BOT as white
+2026/04/02 16:57:58 Practice room created: 780CE9_BOT
+2026/04/02 16:57:58 Player joined room 780CE9_BOT as white
+2026/04/02 16:58:16 [-] DISCONNECTED: Player left room 4714E2_BOT. (Remaining: 0)
+2026/04/02 16:58:18 [-] DISCONNECTED: Player left room 780CE9_BOT. (Remaining: 0)
+2026/04/02 16:58:24 Player entered lobby
+2026/04/02 16:58:24 Match found! Creating room AEB836E0-4980-48A3-A94B-87F9CB651040
+2026/04/02 16:58:24 Failed to notify player 1: websocket: close sent
+2026/04/02 16:58:24 Player joined room AEB836E0-4980-48A3-A94B-87F9CB651040 as black
+2026/04/02 16:58:27 Player entered lobby
+2026/04/02 16:58:38 [-] DISCONNECTED: Player left room AEB836E0-4980-48A3-A94B-87F9CB651040. (Remaining: 0)
+2026/04/02 16:58:43 Player entered lobby
+2026/04/02 16:58:43 Match found! Creating room CD05E605-364F-4FA1-BF20-A6C29482A629
+2026/04/02 16:58:43 Failed to notify player 1: websocket: close sent
+2026/04/02 16:58:43 Player joined room CD05E605-364F-4FA1-BF20-A6C29482A629 as black
+2026/04/02 16:58:47 Player entered lobby
+2026/04/02 16:58:53 [-] DISCONNECTED: Player left room CD05E605-364F-4FA1-BF20-A6C29482A629. (Remaining: 0)
+2026/04/02 16:58:54 Practice room created: 1135B7_BOT
+2026/04/02 16:58:54 Player joined room 1135B7_BOT as white
+2026/04/02 16:58:57 [-] DISCONNECTED: Player left room 1135B7_BOT. (Remaining: 0)
+2026/04/02 16:59:05 Private room created: 2B42B0
+2026/04/02 16:59:05 Player joined room 2B42B0 as white
+2026/04/02 16:59:30 Player joined room 2B42B0 as black
+2026/04/02 16:59:57 [-] DISCONNECTED: Player left room 2B42B0. (Remaining: 1)
+2026/04/02 17:00:02 [-] DISCONNECTED: Player left room 2B42B0. (Remaining: 0)

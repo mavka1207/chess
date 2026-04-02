@@ -64,7 +64,7 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
 
     _wsService = Provider.of<WebSocketService>(context, listen: false);
     _setupListeners();
-    String wsUrl = 'ws://192.168.1.57:8080/rooms/$_roomID';
+    String wsUrl = 'wss://colory-kaci-dreadingly.ngrok-free.dev/rooms/$_roomID';
     if (_assignedColor != null) {
       wsUrl += '?color=$_assignedColor';
     }

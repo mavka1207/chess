@@ -7,7 +7,7 @@ import '../services/chess_pieces_svg.dart';
 class MainMenuScreen extends StatelessWidget {
   const MainMenuScreen({super.key});
 
-  final String baseUrl = 'http://192.168.1.57:8080';
+  final String baseUrl = 'https://colory-kaci-dreadingly.ngrok-free.dev';
 
   Future<void> _createRoom(BuildContext context) async {
     try {
