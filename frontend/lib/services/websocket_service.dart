@@ -78,6 +78,19 @@ class WebSocketService {
     disconnectGame();
   }
 
+  // ------------- Lobby Actions -------------
+  void joinLobby() {}
+
+  void invitePlayer() {}
+
+  void acceptInvite() {}
+
+  void declineInvite() {}
+
+  void joinPublicQueue() {}
+
+
+  // ------------- Clean Up -------------
   void dispose() {
     disconnectLobby();
     disconnectGame();
