@@ -31,14 +31,17 @@ func NewGameManager() *GameManager {
 func (gm *GameManager) matchmaking() {
 	for {
 		time.Sleep(2 * time.Second)
-		gm.mu.Lock()
-
 		// Collect players who are explicitly searching
 		var candidates []*Player
+		gm.mu.Lock()
 		for _, p := range gm.waitingRoom {
 			if p.Searching {
 				candidates = append(candidates, p)
 			}
+		}
+
+		if len(candidates) > 0 {
+			log.Printf("[MATCHMAKING] Candidates found: %d. Waiting for 2.", len(candidates))
 		}
 
 		if len(candidates) < 2 {
@@ -137,14 +140,14 @@ func (gm *GameManager) HandleLobby(w http.ResponseWriter, r *http.Request) {
 		Name:      name,
 		Avatar:    avatar,
 		ID:        playerID,
-		Searching: false, // Default is not searching
+		Searching: false, // Explicitly false on start
 	}
 
 	gm.mu.Lock()
 	gm.waitingRoom[conn] = player
 	gm.mu.Unlock()
 
-	log.Printf("Player %s entered lobby", name)
+	log.Printf("[LOBBY] Player %s (%s) connected. Searching: %v", name, playerID, player.Searching)
 	gm.broadcastOnlinePlayers()
 
 	defer func() {
