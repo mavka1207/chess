@@ -7,9 +7,9 @@ import 'screens/game_board.dart';
 
 void main() {
   runApp(
-    Provider<WebSocketService>(
-      create: (_) => WebSocketService(),
-      dispose: (_, service) => service.dispose(),
+    Provider<WebSocketService>( // Create one websocket service for the entire app
+      create: (_) => WebSocketService(), // Make the service available to all widgets now
+      dispose: (_, service) => service.dispose(), // Clean up when the app is closed
       child: const ChessApp(),
     ),
   );

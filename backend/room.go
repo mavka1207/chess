@@ -193,3 +193,4 @@ func (gm *GameManager) HandleGame(w http.ResponseWriter, r *http.Request) {
 
 	room.Join(conn, requestedColor)
 }
+

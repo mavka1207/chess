@@ -32,6 +32,7 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
   String? _assignedColor;
   bool _isInitialized = false;
   bool _opponentLeft = false;
+  StateSetter? _dialogSetState;  
   
   // High-fidelity board colors (Modern Wood)
   late ImageProvider _lightSquareImg;
@@ -106,10 +107,67 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
           } else if (message.startsWith("OPPONENT_LEFT")) {
             setState(() {
               _opponentLeft = true;
+              if (_dialogSetState != null) {
+                _dialogSetState!(() {});
+              } else {  // ← Always show dialog - different messages for different cases
+                // Dynamic title/content based on game progress
+                final isGameInProgress = _moveHistory.isNotEmpty;
+
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => AlertDialog(
+                    backgroundColor: const Color(0xFF262421),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28)
+                    ),
+                    icon: Icon(
+                      isGameInProgress ? Icons.emoji_events : Icons.exit_to_app,
+                      color: Color(0xFFE94560),
+                      size: 48,
+                    ),
+                    title: Text(
+                        isGameInProgress ? "Victory!" : "Opponent Left",                      style: TextStyle(
+                        color: Color(0xFFE94560),
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    content: Text(
+                      isGameInProgress 
+                        ? "Your opponent resigned!" 
+                        : "Your opponent left before the game started.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white70, height: 1.4),
+                    ),
+                    actions: [
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                            foregroundColor: Colors.white70,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)
+                            ),
+                          ),
+                          onPressed: () => Navigator.of(context).popUntil(
+                            (route) => route.isFirst
+                          ),
+                          child: const Text("MAIN MENU"),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              // else: game was in progress → GAMEOVER will arrive next, do nothing here
             });
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Your opponent has left the game.")),
-            );
+
+            // ScaffoldMessenger.of(context).showSnackBar(
+            //   const SnackBar(content: Text("Your opponent has left the game.")),
+            // );
           } else if (message.startsWith("TURN:")) {
             _turn = message.substring(5);
           } else if (message.startsWith("GAMEOVER:")) {
@@ -141,7 +199,7 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
         final piece = _chess.get(square);
         if (piece != null && 
             ((_myColor == "white" && piece.color == chess_lib.Color.WHITE) ||
-             (_myColor == "black" && piece.color == chess_lib.Color.BLACK))) {
+            (_myColor == "black" && piece.color == chess_lib.Color.BLACK))) {
           _selectedSquare = square;
           _possibleMoves = _chess.moves({"square": square, "verbose": true})
               .map((m) => m["to"] as String)
@@ -163,7 +221,7 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
           final piece = _chess.get(square);
           if (piece != null && 
               ((_myColor == "white" && piece.color == chess_lib.Color.WHITE) ||
-               (_myColor == "black" && piece.color == chess_lib.Color.BLACK))) {
+              (_myColor == "black" && piece.color == chess_lib.Color.BLACK))) {
             _selectedSquare = square;
             _possibleMoves = _chess.moves({"square": square, "verbose": true})
                 .map((m) => m["to"] as String)
@@ -247,168 +305,386 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
     );
   }
 
+  // void _showGameOver(String reason) {
+  //   bool isVictory = false;
+  //   bool isDraw = reason.contains("1/2-1/2");
+    
+  //   if (!isDraw) {
+  //     if (reason.contains("1-0")) {
+  //       isVictory = _myColor == "white";
+  //     } else if (reason.contains("0-1")) {
+  //       isVictory = _myColor == "black";
+  //     }
+  //   }
+
+  //   final String title = isDraw ? "Draw" : (isVictory ? "Victory!" : "You lost");
+  //   final IconData icon = isDraw 
+  //       ? Icons.handshake_outlined 
+  //       : (isVictory ? Icons.emoji_events : Icons.sentiment_very_dissatisfied);
+  //   final Color mainColor = isDraw 
+  //       ? const Color(0xFFF1C40F) // Yellow for draw
+  //       : (isVictory ? const Color(0xFF27AE60) : const Color(0xFFE94560)); // Green for win, Pink/Red for loss
+
+  //   // Friendly reason text
+  //   String friendlyReason = "";
+  //   String method = reason.split(" by ").last;
+    
+  //   if (isDraw) {
+  //     friendlyReason = "The game ended in a draw by $method";
+  //   } else if (isVictory) {
+  //     String opponentColor = _myColor == "white" ? "Black" : "White";
+  //     friendlyReason = "You defeated $opponentColor by $method";
+  //   } else {
+  //     String winnerColor = reason.contains("1-0") ? "White" : "Black";
+  //     friendlyReason = "$winnerColor Wins by $method";
+  //   }
+
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: false,
+  //     builder: (context) => StatefulBuilder(
+  //       builder: (context, dialogSetState) {
+  //         _dialogSetState = dialogSetState;
+  //         return BackdropFilter(
+  //           filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+  //           child: Dialog(
+  //             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+  //             backgroundColor: const Color(0xFF262421).withValues(alpha: 0.95),
+  //             child: Padding(
+  //               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+  //               child: Column(
+  //                 mainAxisSize: MainAxisSize.min,
+  //                 children: [
+  //                   Container(
+  //                     padding: const EdgeInsets.all(16),
+  //                     decoration: BoxDecoration(
+  //                       color: mainColor.withValues(alpha: 0.1),
+  //                       shape: BoxShape.circle,
+  //                     ),
+  //                     child: Icon(
+  //                       icon, 
+  //                       size: 48, 
+  //                       color: mainColor,
+  //                     ),
+  //                   ),
+  //                   const SizedBox(height: 24),
+  //                   Text(
+  //                     title, 
+  //                     style: TextStyle(
+  //                       fontSize: 28, 
+  //                       fontWeight: FontWeight.bold, 
+  //                       color: mainColor,
+  //                       letterSpacing: 0.5,
+  //                     ),
+  //                   ),
+  //                   const SizedBox(height: 12),
+  //                   Text(
+  //                     friendlyReason, 
+  //                     textAlign: TextAlign.center, 
+  //                     style: const TextStyle(
+  //                       fontSize: 16, 
+  //                       color: Colors.white70,
+  //                       height: 1.4,
+  //                     )
+  //                   ),
+  //                   const SizedBox(height: 32),
+  //                   SizedBox(
+  //                     width: double.infinity,
+  //                     height: 52,
+  //                     child: ElevatedButton(
+  //                       style: ElevatedButton.styleFrom(
+  //                         backgroundColor: _opponentLeft 
+  //                             ? Colors.white10 
+  //                             : const Color(0xFFE94560),
+  //                         foregroundColor: _opponentLeft 
+  //                             ? Colors.white30 
+  //                             : Colors.white,
+  //                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+  //                         elevation: _opponentLeft ? 0 : 8,
+  //                         shadowColor: const Color(0xFFE94560).withValues(alpha: 0.4),
+  //                       ),
+  //                       onPressed: _opponentLeft ? null : () {
+  //                         Navigator.of(context).pop();
+  //                         _dialogSetState = null;
+  //                         _wsService.sendMove("RESTART");
+  //                       },
+  //                       child: Text(
+  //                         _opponentLeft ? "OPPONENT LEFT" : "REMATCH",
+  //                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.1),
+  //                       ),
+  //                     ),
+  //                   ),
+  //                   const SizedBox(height: 12),
+  //                   SizedBox(
+  //                     width: double.infinity,
+  //                     height: 52,
+  //                     child: OutlinedButton(
+  //                       style: OutlinedButton.styleFrom(
+  //                         side: const BorderSide(color: Color(0xFF27AE60), width: 1.5),
+  //                         foregroundColor: const Color(0xFF27AE60),
+  //                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+  //                         textStyle: const TextStyle(
+  //                           fontSize: 16, 
+  //                           fontWeight: FontWeight.bold,
+  //                           letterSpacing: 1.1,
+  //                         ),
+  //                       ),
+  //                       onPressed: () {
+  //                         Navigator.of(context).push(
+  //                           MaterialPageRoute(
+  //                             builder: (context) => AnalysisScreen(
+  //                               fenHistory: _fenHistory,
+  //                               moveHistory: _moveHistory,
+  //                               myColor: _myColor,
+  //                             ),
+  //                           ),
+  //                         );
+  //                       },
+  //                       child: const Text("ANALYZE"),
+  //                     ),
+  //                   ),
+  //                   const SizedBox(height: 12),
+  //                   SizedBox(
+  //                     width: double.infinity,
+  //                     height: 52,
+  //                     child: OutlinedButton(
+  //                       style: OutlinedButton.styleFrom(
+  //                         side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+  //                         foregroundColor: Colors.white70,
+  //                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+  //                         textStyle: const TextStyle(
+  //                           fontSize: 16, 
+  //                           fontWeight: FontWeight.w600,
+  //                         ),
+  //                       ),
+  //                       onPressed: () {
+  //                         _dialogSetState = null;
+  //                         Navigator.of(context).popUntil((route) => route.isFirst);
+  //                       },
+  //                       child: const Text("MAIN MENU"),
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //           ),
+  //         );
+  //       }
+  //     ),
+  //   );
+  // }
+
   void _showGameOver(String reason) {
-    bool isVictory = false;
-    bool isDraw = reason.contains("1/2-1/2");
-    
-    if (!isDraw) {
-      if (reason.contains("1-0")) {
-        isVictory = _myColor == "white";
-      } else if (reason.contains("0-1")) {
-        isVictory = _myColor == "black";
-      }
+  bool isVictory = false;
+  bool isDraw = reason.contains("1/2-1/2");
+
+  if (!isDraw) {
+    if (reason.contains("1-0")) {
+      isVictory = _myColor == "white";
+    } else if (reason.contains("0-1")) {
+      isVictory = _myColor == "black";
     }
-
-    final String title = isDraw ? "Draw" : (isVictory ? "Victory!" : "Defeat");
-    final IconData icon = isDraw 
-        ? Icons.handshake_outlined 
-        : (isVictory ? Icons.emoji_events : Icons.sentiment_very_dissatisfied);
-    final Color mainColor = isDraw 
-        ? const Color(0xFFF1C40F) // Yellow for draw
-        : (isVictory ? const Color(0xFF27AE60) : const Color(0xFFE94560)); // Green for win, Pink/Red for loss
-
-    // Friendly reason text
-    String friendlyReason = "";
-    String method = reason.split(" by ").last;
-    
-    if (isDraw) {
-      friendlyReason = "The game ended in a draw by $method";
-    } else if (isVictory) {
-      String opponentColor = _myColor == "white" ? "Black" : "White";
-      friendlyReason = "You defeated $opponentColor by $method";
-    } else {
-      String winnerColor = reason.contains("1-0") ? "White" : "Black";
-      friendlyReason = "$winnerColor Wins by $method";
-    }
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-          backgroundColor: const Color(0xFF262421).withValues(alpha: 0.95),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: mainColor.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    icon, 
-                    size: 48, 
-                    color: mainColor,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  title, 
-                  style: TextStyle(
-                    fontSize: 28, 
-                    fontWeight: FontWeight.bold, 
-                    color: mainColor,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  friendlyReason, 
-                  textAlign: TextAlign.center, 
-                  style: const TextStyle(
-                    fontSize: 16, 
-                    color: Colors.white70,
-                    height: 1.4,
-                  )
-                ),
-                const SizedBox(height: 32),
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _opponentLeft 
-                          ? Colors.white10 
-                          : const Color(0xFFE94560),
-                      foregroundColor: _opponentLeft 
-                          ? Colors.white30 
-                          : Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      elevation: _opponentLeft ? 0 : 8,
-                      shadowColor: const Color(0xFFE94560).withValues(alpha: 0.4),
-                    ),
-                    onPressed: _opponentLeft ? null : () {
-                      Navigator.of(context).pop();
-                      _wsService.sendMove("RESTART");
-                    },
-                    child: Text(
-                      _opponentLeft ? "OPPONENT LEFT" : "REMATCH",
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.1),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF27AE60), width: 1.5),
-                      foregroundColor: const Color(0xFF27AE60),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      textStyle: const TextStyle(
-                        fontSize: 16, 
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.1,
-                      ),
-                    ),
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => AnalysisScreen(
-                            fenHistory: _fenHistory,
-                            moveHistory: _moveHistory,
-                            myColor: _myColor,
-                          ),
-                        ),
-                      );
-                    },
-                    child: const Text("ANALYZE"),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
-                      foregroundColor: Colors.white70,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      textStyle: const TextStyle(
-                        fontSize: 16, 
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    onPressed: () {
-                      Navigator.of(context).popUntil((route) => route.isFirst);
-                    },
-                    child: const Text("MAIN MENU"),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
+  final String originalTitle =
+      isDraw ? "Draw" : (isVictory ? "Victory!" : "You lost");
+
+  final IconData originalIcon = isDraw
+      ? Icons.handshake_outlined
+      : (isVictory
+          ? Icons.emoji_events
+          : Icons.sentiment_very_dissatisfied);
+
+  final Color originalMainColor = isDraw
+      ? const Color(0xFFF1C40F)
+      : (isVictory
+          ? const Color(0xFF27AE60)
+          : const Color(0xFFE94560));
+
+  String originalFriendlyReason = "";
+  String method = reason.split(" by ").last;
+
+  if (isDraw) {
+    originalFriendlyReason = "The game ended in a draw by $method";
+  } else if (isVictory) {
+    String opponentColor = _myColor == "white" ? "Black" : "White";
+    originalFriendlyReason = "You defeated $opponentColor by $method";
+  } else {
+    String winnerColor = reason.contains("1-0") ? "White" : "Black";
+    originalFriendlyReason = "$winnerColor wins by $method";
+  }
+
+  final bool abandonedBeforeStart = _opponentLeft && _moveHistory.isEmpty;
+  final bool resignedMidGame = _opponentLeft && _moveHistory.isNotEmpty;
+
+  final String title = resignedMidGame
+      ? "Victory!"
+      : abandonedBeforeStart
+          ? "Opponent Left"
+          : originalTitle;
+
+  final String friendlyReason = resignedMidGame
+      ? "Your opponent resigned."
+      : abandonedBeforeStart
+          ? "Your opponent left before the game started."
+          : originalFriendlyReason;
+
+  final Color mainColor = resignedMidGame
+      ? const Color(0xFF27AE60)
+      : abandonedBeforeStart
+          ? const Color(0xFFE94560)
+          : originalMainColor;
+
+  final IconData icon = resignedMidGame
+      ? Icons.emoji_events
+      : abandonedBeforeStart
+          ? Icons.exit_to_app
+          : originalIcon;
+
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => StatefulBuilder(
+      builder: (context, dialogSetState) {
+        _dialogSetState = dialogSetState;
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+          child: Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+            backgroundColor: const Color(0xFF262421).withValues(alpha: 0.95),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: mainColor.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      icon,
+                      size: 48,
+                      color: mainColor,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: mainColor,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    friendlyReason,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.white70,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _opponentLeft
+                            ? Colors.white10
+                            : const Color(0xFFE94560),
+                        foregroundColor: _opponentLeft
+                            ? Colors.white30
+                            : Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: _opponentLeft ? 0 : 8,
+                        shadowColor: const Color(0xFFE94560).withValues(alpha: 0.4),
+                      ),
+                      onPressed: _opponentLeft ? null : () {
+                        Navigator.of(context).pop();
+                        _dialogSetState = null;
+                        _wsService.sendMove("RESTART");
+                      },
+                      child: Text(
+                        _opponentLeft ? "OPPONENT LEFT" : "REMATCH",
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.1,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFF27AE60), width: 1.5),
+                        foregroundColor: const Color(0xFF27AE60),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.1,
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => AnalysisScreen(
+                              fenHistory: _fenHistory,
+                              moveHistory: _moveHistory,
+                              myColor: _myColor,
+                            ),
+                          ),
+                        );
+                      },
+                      child: const Text("ANALYZE"),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                        foregroundColor: Colors.white70,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      onPressed: () {
+                        _dialogSetState = null;
+                        Navigator.of(context).popUntil((route) => route.isFirst);
+                      },
+                      child: const Text("MAIN MENU"),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    ),
+  );
+}
   @override
   Widget build(BuildContext context) {
     final bool isWhite = _myColor == "white" || _myColor == "";

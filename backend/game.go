@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	// "image/color"
 	"log"
 	"math/rand"
 	"os"
@@ -16,6 +17,7 @@ type Room struct {
 	ID        string
 	Game      *chess.Game
 	Players   map[*websocket.Conn]string // Conn -> Color (white or black)
+	writeMu   map[*websocket.Conn]*sync.Mutex // To serialize writes per connection
 	mu        sync.Mutex
 	started   bool
 	IsBotGame bool
@@ -27,12 +29,12 @@ func NewRoom(id string) *Room {
 		ID:      id,
 		Game:    chess.NewGame(),
 		Players: make(map[*websocket.Conn]string),
+		writeMu: make(map[*websocket.Conn]*sync.Mutex),
 	}
 }
 
 func (r *Room) Join(conn *websocket.Conn, requestedColor string) {
 	r.mu.Lock()
-	defer r.mu.Unlock()
 
 	// Determine color
 	color := ""
@@ -70,22 +72,44 @@ func (r *Room) Join(conn *websocket.Conn, requestedColor string) {
 	}
 
 	r.Players[conn] = color
+	r.writeMu[conn] = &sync.Mutex{} 
 	log.Printf("Player joined room %s as %s", r.ID, color)
 
-	// Always start listening to the connection immediately
+
+	shouldStart := len(r.Players) == 2 || (r.IsBotGame && len(r.Players) == 1)
+
+	// First shouldStart — inside the lock
+	if shouldStart {
+		r.started = true   // ← modifies shared state → must be inside lock
+	}	
+	
 	go r.handlePlayer(conn)
 
-	if len(r.Players) == 2 || (r.IsBotGame && len(r.Players) == 1) {
-		r.started = true
-		r.broadcastColors()
-		r.broadcastBoard("") // Initial board
+	r.mu.Unlock()
+
+	// Second shouldStart — outside the lock
+	if shouldStart {
+		r.broadcastColors()  // ← network calls → must be outside lock
+		r.broadcastBoard("")
 		r.notifyTurn()
 	}
 }
 
+func (r *Room) sendMessage(conn *websocket.Conn, msg string) {
+    r.mu.Lock()
+    mu, ok := r.writeMu[conn]
+    r.mu.Unlock()
+    if !ok {
+        return
+    }
+    mu.Lock()
+    defer mu.Unlock()
+    conn.WriteMessage(websocket.TextMessage, []byte(msg))
+}
+
 func (r *Room) broadcastColors() {
 	for conn, color := range r.Players {
-		conn.WriteMessage(websocket.TextMessage, []byte(color))
+		r.sendMessage(conn, color)
 	}
 }
 
@@ -108,35 +132,59 @@ func (r *Room) broadcastBoard(lastMove string) {
 	}
 
 	for conn := range r.Players {
-		conn.WriteMessage(websocket.TextMessage, []byte(msg))
+		r.sendMessage(conn, msg)
 		if history != "" {
-			conn.WriteMessage(websocket.TextMessage, []byte("MOVES:"+history))
+			r.sendMessage(conn, "MOVES:"+history)
 		}
 	}
 }
 
 func (r *Room) Broadcast(msg string) {
 	r.mu.Lock()
-	defer r.mu.Unlock()
+	conns := make([]*websocket.Conn, 0, len(r.Players))
 	for conn := range r.Players {
-		conn.WriteMessage(websocket.TextMessage, []byte(msg))
+        conns = append(conns, conn)
+    }
+    r.mu.Unlock()
+
+	for _, conn := range conns {
+		r.sendMessage(conn, msg)
 	}
 }
 
 func (r *Room) handlePlayer(conn *websocket.Conn) {
 	defer func() {
 		r.mu.Lock()
+		color := r.Players[conn]
+		log.Printf("[DEBUG] defer: conn color = '%s', players = %v", color, r.Players)
 		delete(r.Players, conn)
+		delete(r.writeMu, conn) 
 		remaining := len(r.Players)
 		r.mu.Unlock()
+		log.Printf("[DEBUG] IsBotGame = %v, remaining = %d", r.IsBotGame, remaining)
 		
 		conn.Close()
-		log.Printf("[-] DISCONNECTED: Player left room %s. (Remaining: %d)", r.ID, remaining)
+		log.Printf("[-] DISCONNECTED: %s left room %s. (Remaining: %d)", color, r.ID, remaining)
 
 		// Notify remaining player if this was a multiplayer game
-		if !r.IsBotGame && remaining == 1 {
+		if !r.IsBotGame && remaining == 1 {				// Game never started
 			r.Broadcast("OPPONENT_LEFT")
+			
 		}
+		// if !r.IsBotGame && remaining == 1 {
+		// 	log.Printf("[DEBUG] Broadcasting OPPONENT_LEFT, remaining: %d", remaining)
+		// 	r.Broadcast("OPPONENT_LEFT")
+
+		// 	log.Printf("[DEBUG] r.started = %v", started)
+		// 	// Only declare winner if game had actually started
+		// 	if r.started {
+		// 		winResult := "1-0 by resignation"
+		// 		if color == "white" {
+		// 			winResult = "0-1 by resignation"
+		// 		}
+		// 		r.Broadcast(fmt.Sprintf("GAMEOVER:%s", winResult))
+		// 	}
+		// }
 	}()
 
 	for {
@@ -161,33 +209,38 @@ func (r *Room) processMove(conn *websocket.Conn, moveStr string) {
 	}
 
 	r.mu.Lock()
-	defer r.mu.Unlock()
 
 	color := r.Players[conn]
 	if (color == "white" && r.Game.Position().Turn() != chess.White) ||
 		(color == "black" && r.Game.Position().Turn() != chess.Black) {
-		conn.WriteMessage(websocket.TextMessage, []byte("ERROR:Not your turn"))
+		r.mu.Unlock() // Unlock before sending message to avoid deadlock
+		r.sendMessage(conn, "ERROR:Not your turn")
 		return
 	}
 
 	// Expecting move in UCI notation (e.g. e2e4)
 	move, err := chess.UCINotation{}.Decode(r.Game.Position(), moveStr)
 	if err != nil {
-		conn.WriteMessage(websocket.TextMessage, []byte("ERROR:Invalid move: "+err.Error()))
+		r.mu.Unlock()
+		r.sendMessage(conn, "ERROR:Invalid move: "+err.Error())
 		return
 	}
 
 	err = r.Game.Move(move)
 	if err != nil {
-		conn.WriteMessage(websocket.TextMessage, []byte("ERROR:Move execution failed: "+err.Error()))
+		r.mu.Unlock()
+		r.sendMessage(conn, "ERROR:Move execution failed: "+err.Error())
 		return
 	}
+
+	gameOver := r.Game.Outcome() != chess.NoOutcome
+    r.mu.Unlock()  // ← unlock before broadcasting
 
 	// Move successful, broadcast new state
 	r.broadcastBoard(moveStr)
 
 	// Check if game ended
-	if r.Game.Outcome() != chess.NoOutcome {
+	if gameOver{
 		r.broadcastGameOver()
 	} else {
 		// Notify whose turn it is
@@ -201,7 +254,7 @@ func (r *Room) notifyTurn() {
 		turn = "black"
 	}
 	for conn := range r.Players {
-		conn.WriteMessage(websocket.TextMessage, []byte("TURN:"+turn))
+		r.sendMessage(conn, "TURN:"+turn)
 	}
 
 	// If it's the bot's turn, trigger it
@@ -232,16 +285,15 @@ func (r *Room) makeBotMove() {
 
 func (r *Room) applyBotMove(moveStr string) {
 	r.mu.Lock()
-	defer r.mu.Unlock()
-
 	move, _ := chess.UCINotation{}.Decode(r.Game.Position(), moveStr)
 	r.Game.Move(move)
-
+	gameOver := r.Game.Outcome() != chess.NoOutcome
+    r.mu.Unlock()  
 	// Move successful, broadcast new state
 	r.broadcastBoard(moveStr)
 
 	// Check if game ended
-	if r.Game.Outcome() != chess.NoOutcome {
+	if gameOver {
 		r.broadcastGameOver()
 	} else {
 		r.notifyTurn()
@@ -252,9 +304,7 @@ func (r *Room) broadcastGameOver() {
 	outcome := r.Game.Outcome()
 	method := r.Game.Method()
 	msg := fmt.Sprintf("GAMEOVER:%s by %s", outcome, method)
-	for conn := range r.Players {
-		conn.WriteMessage(websocket.TextMessage, []byte(msg))
-	}
+	r.Broadcast(msg)
 
 	// Log game for persistence
 	r.logGame()
@@ -287,7 +337,5 @@ func (r *Room) Restart() {
 	r.notifyTurn()
 
 	// Notify clients that game was reset
-	for conn := range r.Players {
-		conn.WriteMessage(websocket.TextMessage, []byte("RESTARTED"))
-	}
+	r.Broadcast("RESTARTED")
 }
