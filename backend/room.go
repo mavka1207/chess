@@ -40,10 +40,6 @@ func (gm *GameManager) matchmaking() {
 			}
 		}
 
-		if len(candidates) > 0 {
-			log.Printf("[MATCHMAKING] Candidates found: %d. Waiting for 2.", len(candidates))
-		}
-
 		if len(candidates) < 2 {
 			gm.mu.Unlock()
 			continue

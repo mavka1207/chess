@@ -37,23 +37,30 @@ class WebSocketService {
     final url = 'wss://$serverUrl/rooms';
     final fullUrl = _appendProfileParams(url);
     if (_currentLobbyUrl == fullUrl && _lobbyChannel != null) return;
+    
     disconnectLobby();
     _currentLobbyUrl = fullUrl;
     _lobbyConnectionId++;
     final thisId = _lobbyConnectionId;
     
-    _lobbyChannel = WebSocketChannel.connect(Uri.parse(fullUrl));
-    _lobbyChannel!.stream.listen((message) {
-      if (thisId == _lobbyConnectionId) {
-        _roomController.add(message.toString());
-      }
-    }, onDone: () {
-      _currentLobbyUrl = null;
-      // Reconnect after delay?
-      Future.delayed(const Duration(seconds: 5), () => connectLobby());
-    }, onError: (error) {
-      _currentLobbyUrl = null;
-    });
+    try {
+      _lobbyChannel = WebSocketChannel.connect(Uri.parse(fullUrl));
+      _lobbyChannel!.stream.listen((message) {
+        if (thisId == _lobbyConnectionId) {
+          _roomController.add(message.toString());
+        }
+      }, onDone: () {
+        _currentLobbyUrl = null;
+        if (thisId == _lobbyConnectionId) {
+          Future.delayed(const Duration(seconds: 5), () => connectLobby());
+        }
+      }, onError: (error) {
+        _currentLobbyUrl = null;
+        _roomController.add('[WS_ERROR]$error');
+      });
+    } catch (e) {
+      _roomController.add('[WS_ERROR]$e');
+    }
   }
 
   // Deprecated: use connectLobby()
