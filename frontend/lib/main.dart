@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'services/websocket_service.dart';
+import 'services/profile_service.dart';
 import 'screens/main_menu.dart';
 import 'screens/lobby.dart';
 import 'screens/game_board.dart';
+import 'screens/profile_setup_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  final profileService = ProfileService();
+  await profileService.init();
+
   runApp(
-    Provider<WebSocketService>( // Create one websocket service for the entire app
-      create: (_) => WebSocketService(), // Make the service available to all widgets now
-      dispose: (_, service) => service.dispose(), // Clean up when the app is closed
+    Provider<WebSocketService>(
+      create: (_) => WebSocketService(),
+      dispose: (_, service) => service.dispose(),
       child: const ChessApp(),
     ),
   );
@@ -20,6 +27,8 @@ class ChessApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final profileService = ProfileService();
+    
     return MaterialApp(
       title: 'Chess Mobile',
       debugShowCheckedModeBanner: false,
@@ -31,9 +40,10 @@ class ChessApp extends StatelessWidget {
           secondary: Color(0xFFC0392B),
         ),
       ),
-      initialRoute: '/',
+      initialRoute: profileService.isProfileSet ? '/' : '/setup',
       routes: {
         '/': (context) => const MainMenuScreen(),
+        '/setup': (context) => const ProfileSetupScreen(),
         '/lobby': (context) => const LobbyScreen(),
         '/game': (context) => const GameBoardScreen(),
       },

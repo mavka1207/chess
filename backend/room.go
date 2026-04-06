@@ -174,6 +174,13 @@ func (gm *GameManager) HandleGame(w http.ResponseWriter, r *http.Request) {
 	}
 
 	requestedColor := r.URL.Query().Get("color")
+	name := r.URL.Query().Get("name")
+	avatar := r.URL.Query().Get("avatar")
+	playerID := r.URL.Query().Get("id")
+
+	if name == "" {
+		name = "Anonymous"
+	}
 
 	gm.mu.Lock()
 	room, exists := gm.rooms[roomID]
@@ -191,6 +198,6 @@ func (gm *GameManager) HandleGame(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	room.Join(conn, requestedColor)
+	room.Join(conn, requestedColor, name, avatar, playerID)
 }
 

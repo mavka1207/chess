@@ -8,6 +8,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'analysis_screen.dart';
 import '../services/websocket_service.dart';
 import '../services/chess_pieces_svg.dart';
+import '../services/profile_service.dart';
 
 class GameBoardScreen extends StatefulWidget {
   const GameBoardScreen({super.key});
@@ -74,12 +75,30 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
     _fenHistory = [_chess.fen]; // Initialize starting FEN
   }
 
+  Map<String, String>? _whitePlayer;
+  Map<String, String>? _blackPlayer;
+
   void _setupListeners() {
     _gameSubscription = _wsService.gameStream.listen((message) {
       if (mounted) {
         setState(() {
           if (message == "white" || message == "black") {
             _myColor = message;
+          } else if (message.startsWith("PLAYER_INFO:")) {
+            final parts = message.split(":");
+            if (parts.length >= 5) {
+              final info = {
+                'color': parts[1],
+                'name': parts[2],
+                'avatar': parts[3],
+                'id': parts[4],
+              };
+              if (info['color'] == 'white') {
+                _whitePlayer = info;
+              } else {
+                _blackPlayer = info;
+              }
+            }
           } else if (message.startsWith("BOARD:")) {
             final parts = message.split(":");
             final fen = parts[1];
@@ -729,7 +748,10 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
   Widget _buildPlayerPanel(String color) {
     final bool isMe = _myColor == color;
     final bool isMyTurn = _turn == color;
-    final String label = isMe ? "You" : "Opponent";
+    
+    final player = (color == 'white') ? _whitePlayer : _blackPlayer;
+    final String label = player?['name'] ?? (isMe ? "You" : "Opponent");
+    final String? avatarIndexStr = player?['avatar'];
     
     // Calculate captured pieces
     Map<chess_lib.PieceType, int> captured = _getCapturedPieces(color == "white" ? chess_lib.Color.BLACK : chess_lib.Color.WHITE);
@@ -742,10 +764,18 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            backgroundColor: Colors.grey[800],
-            radius: 20,
-            child: Icon(Icons.person, color: isMe ? const Color(0xFFE94560) : Colors.white70),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isMe ? const Color(0xFFE94560).withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.05),
+              shape: BoxShape.circle,
+              border: Border.all(color: isMe ? const Color(0xFFE94560) : Colors.white10),
+            ),
+            padding: const EdgeInsets.all(4),
+            child: (avatarIndexStr != null) 
+              ? SvgPicture.string(ProfileService.getAvailableAvatars()[int.parse(avatarIndexStr)])
+              : Icon(Icons.person, color: isMe ? const Color(0xFFE94560) : Colors.white70),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -890,10 +920,6 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
     final isPossible = _possibleMoves.contains(square);
     final hasPieceOnTarget = _chess.get(square) != null;
     
-    // Wood palette
-    final darkColor = const Color(0xFFB58863);
-    final lightColor = const Color(0xFFF0D9B5);
-
     return GestureDetector(
       onTap: () {
         if (isPossible) HapticFeedback.lightImpact();

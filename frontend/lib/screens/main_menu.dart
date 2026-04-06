@@ -2,12 +2,18 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_svg/flutter_svg.dart';
-import '../services/chess_pieces_svg.dart';
+import '../services/profile_service.dart';
 
-class MainMenuScreen extends StatelessWidget {
+class MainMenuScreen extends StatefulWidget {
   const MainMenuScreen({super.key});
 
+  @override
+  State<MainMenuScreen> createState() => _MainMenuScreenState();
+}
+
+class _MainMenuScreenState extends State<MainMenuScreen> {
   final String baseUrl = 'https://colory-kaci-dreadingly.ngrok-free.dev';
+  final ProfileService _profileService = ProfileService();
 
   Future<void> _createRoom(BuildContext context) async {
     try {
@@ -95,20 +101,41 @@ class MainMenuScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.05),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white10, width: 1),
-                    ),
-                    child: SvgPicture.string(
-                      PieceSvg.wP,
-                      width: 80,
-                      height: 80,
+                  // Profile Header
+                  GestureDetector(
+                    onTap: () => Navigator.pushNamed(context, '/setup'),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE94560).withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: const Color(0xFFE94560).withValues(alpha: 0.3), width: 2),
+                          ),
+                          child: SvgPicture.string(
+                            _profileService.avatarSvg,
+                            width: 60,
+                            height: 60,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _profileService.nickname,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const Text(
+                          'tap to edit profile',
+                          style: TextStyle(fontSize: 12, color: Colors.white38),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 48),
                   const Text(
                     'CHESS',
                     style: TextStyle(
