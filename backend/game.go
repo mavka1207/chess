@@ -239,10 +239,7 @@ func (r *Room) processMove(conn *websocket.Conn, message string) {
 		return
 	}
 
-    moveStr := message
-    if strings.HasPrefix(moveStr, "MOVE:") {
-        moveStr = strings.TrimPrefix(moveStr, "MOVE:")
-    }
+	moveStr := strings.TrimPrefix(message, "MOVE:")
 
 	r.mu.Lock()
     log.Printf("[SERVER] Processing move: %s (Turn: %s, MyColor: %s)", moveStr, r.Game.Position().Turn(), r.Players[conn].Color)
