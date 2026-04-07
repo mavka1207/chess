@@ -260,17 +260,43 @@ func (r *Room) handlePlayer(conn *websocket.Conn) {
 func (r *Room) processMove(conn *websocket.Conn, message string) {
 	moveStr := strings.TrimPrefix(message, "MOVE:")
 
-	if moveStr == "RESTART" || moveStr == "REMATCH" {
+	if moveStr == "RESTART" {
 		r.mu.Lock()
 		player := r.Players[conn]
 		color := "unknown"
 		if player != nil {
 			color = player.Color
 		}
-		log.Printf("[REMATCH] Immediate restart triggered by %s in room %s", color, r.ID)
+		log.Printf("[RESTART] Immediate restart triggered by %s in room %s", color, r.ID)
 		r.mu.Unlock()
 
 		r.Restart()
+		return
+	}
+
+	if moveStr == "REMATCH" {
+		r.mu.Lock()
+		player := r.Players[conn]
+		color := "unknown"
+		if player != nil {
+			color = player.Color
+		}
+		log.Printf("[REMATCH] Request from %s in room %s", color, r.ID)
+		
+		r.RematchRequested[conn] = true
+		numRequested := len(r.RematchRequested)
+		numPlayers := len(r.Players)
+		isBot := r.IsBotGame
+		r.mu.Unlock()
+
+		if isBot || numPlayers <= 1 || numRequested >= 2 {
+			r.Restart()
+		} else {
+			// Notify other player that we want a rematch
+			r.broadcastToOthers(conn, "REMATCH_REQUESTED")
+			// Also notify the sender that their request is pending
+			r.sendMessage(conn, "REMATCH_SENT")
+		}
 		return
 	}
 

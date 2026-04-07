@@ -33,6 +33,7 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
   String? _assignedColor;
   bool _opponentLeft = false;
   bool _opponentWantsRematch = false;
+  bool _rematchRequestedByMe = false;
   StateSetter? _dialogSetState;  
   bool _connected = false;
   
@@ -144,12 +145,18 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
             _fenHistory = [_chess.fen]; 
             _opponentLeft = false; 
             _opponentWantsRematch = false;
+            _rematchRequestedByMe = false;
             HapticFeedback.vibrate();
             print('[DEBUG] Board Reset Successful and UI Updated');
           } else if (message == "REMATCH_REQUESTED") {
             if (_dialogSetState != null) {
                _opponentWantsRematch = true;
                _dialogSetState!(() {});
+            }
+          } else if (message == "REMATCH_SENT") {
+            if (_dialogSetState != null) {
+              _rematchRequestedByMe = true;
+              _dialogSetState!(() {});
             }
           } else if (message.startsWith("OPPONENT_LEFT")) {
             print('[GAME] Opponent Left Event Received');
@@ -520,11 +527,15 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
                         elevation: _opponentLeft ? 0 : 8,
                         shadowColor: const Color(0xFFE94560).withValues(alpha: 0.4),
                       ),
-                      onPressed: _opponentLeft ? null : () {
+                      onPressed: (_opponentLeft || _rematchRequestedByMe) ? null : () {
                         _wsService.sendMove("REMATCH");
                       },
                       child: Text(
-                        _opponentLeft ? "OPPONENT LEFT" : "REMATCH",
+                        _opponentLeft 
+                          ? "OPPONENT LEFT" 
+                          : _rematchRequestedByMe 
+                            ? "PENDING..." 
+                            : "REMATCH",
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
