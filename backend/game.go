@@ -243,9 +243,13 @@ func (r *Room) handlePlayer(conn *websocket.Conn) {
 			return
 		}
 
-		// Only process moves if the game has started or it's a RESTART command
+		// Only process moves if the game has started or it's a management command
         msgStr := string(msg)
-		if !r.started && msgStr != "RESTART" && msgStr != "MOVE:RESTART" {
+        isMgmt := strings.Contains(msgStr, "RESTART") || 
+                  strings.Contains(msgStr, "REMATCH") || 
+                  strings.Contains(msgStr, "RESIGN")
+
+		if !r.started && !isMgmt {
 			continue
 		}
 
@@ -258,18 +262,15 @@ func (r *Room) processMove(conn *websocket.Conn, message string) {
 
 	if moveStr == "RESTART" || moveStr == "REMATCH" {
 		r.mu.Lock()
-		r.RematchRequested[conn] = true
-		numRequested := len(r.RematchRequested)
-		numPlayers := len(r.Players)
-		isBot := r.IsBotGame
+		player := r.Players[conn]
+		color := "unknown"
+		if player != nil {
+			color = player.Color
+		}
+		log.Printf("[REMATCH] Immediate restart triggered by %s in room %s", color, r.ID)
 		r.mu.Unlock()
 
-		if isBot || numPlayers <= 1 || numRequested >= 2 {
-			r.Restart()
-		} else {
-			// Notify other player that we want a rematch
-			r.broadcastToOthers(conn, "REMATCH_REQUESTED")
-		}
+		r.Restart()
 		return
 	}
 
