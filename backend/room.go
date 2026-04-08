@@ -126,7 +126,7 @@ func (gm *GameManager) HandleLobby(w http.ResponseWriter, r *http.Request) {
 	playerID := r.URL.Query().Get("id")
 
 	if name == "" {
-		name = "Anonymous"
+		name = "Guest"
 	}
 
 	player := &Player{
@@ -294,7 +294,7 @@ func (gm *GameManager) HandleGame(w http.ResponseWriter, r *http.Request) {
 	playerID := r.URL.Query().Get("id")
 
 	if name == "" {
-		name = "Anonymous"
+		name = "Guest"
 	}
 
 	gm.mu.Lock()
