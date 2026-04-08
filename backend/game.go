@@ -124,17 +124,16 @@ func (r *Room) sendMessage(conn *websocket.Conn, msg string) {
     conn.WriteMessage(websocket.TextMessage, []byte(msg))
 }
 
-// Internal version that assumes room lock IS NOT held, but handles its own connection-level locking
-func (r *Room) broadcastSafe(msg string) {
-	r.mu.Lock()
-	var conns []*websocket.Conn
-	for conn := range r.Players {
-		conns = append(conns, conn)
-	}
-	r.mu.Unlock()
+func (r *Room) finalizeMove(moveStr string, gameOver bool) {
+	// Move successful, broadcast new state
+	r.broadcastBoard(moveStr)
 
-	for _, conn := range conns {
-		r.sendMessage(conn, msg)
+	// Check if game ended
+	if gameOver {
+		r.broadcastGameOver()
+	} else {
+		// Notify whose turn it is
+		r.notifyTurn()
 	}
 }
 
@@ -360,16 +359,7 @@ func (r *Room) processMove(conn *websocket.Conn, message string) {
 	gameOver := r.Game.Outcome() != chess.NoOutcome
     r.mu.Unlock()
 
-	// Move successful, broadcast new state
-	r.broadcastBoard(moveStr)
-
-	// Check if game ended
-	if gameOver{
-		r.broadcastGameOver()
-	} else {
-		// Notify whose turn it is
-		r.notifyTurn()
-	}
+	r.finalizeMove(moveStr, gameOver)
 }
 
 func (r *Room) notifyTurn() {
@@ -420,16 +410,8 @@ func (r *Room) applyBotMove(moveStr string) {
 	move, _ := chess.UCINotation{}.Decode(r.Game.Position(), moveStr)
 	r.Game.Move(move)
 	gameOver := r.Game.Outcome() != chess.NoOutcome
-    r.mu.Unlock()  
-	// Move successful, broadcast new state
-	r.broadcastBoard(moveStr)
-
-	// Check if game ended
-	if gameOver {
-		r.broadcastGameOver()
-	} else {
-		r.notifyTurn()
-	}
+	r.mu.Unlock()
+	r.finalizeMove(moveStr, gameOver)
 }
 
 func (r *Room) broadcastGameOver() {

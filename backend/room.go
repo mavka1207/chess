@@ -268,7 +268,6 @@ func (gm *GameManager) HandleCreate(w http.ResponseWriter, r *http.Request) {
 func (gm *GameManager) HandlePractice(w http.ResponseWriter, r *http.Request) {
 	roomID := strings.ToUpper(uuid.New().String()[:6]) + "_BOT"
 	room := NewRoom(roomID, true)
-	room.IsBotGame = true
 	room.BotColor = "black"
 
 	gm.mu.Lock()
