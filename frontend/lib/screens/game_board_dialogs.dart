@@ -1,6 +1,10 @@
 part of 'game_board.dart';
 
+// ─── DIALOGS ─────────────────────────────────────────────────────────────────
+
 extension _GameBoardDialogs on _GameBoardScreenState {
+
+  // ── Resign Confirmation Dialog ───────────────────────────────────────────
   void _showResignDialog() {
     showDialog(
       context: context,
@@ -34,6 +38,7 @@ extension _GameBoardDialogs on _GameBoardScreenState {
     );
   }
 
+  // ── Promotion Dialog ─────────────────────────────────────────────────────
   Future<String?> _showPromotionDialog(chess_lib.Color color) async {
     return showDialog<String>(
       context: context,
@@ -79,6 +84,7 @@ extension _GameBoardDialogs on _GameBoardScreenState {
     );
   }
 
+  // ── Game Over Dialog ───────────────────────────────────────────────────
   void _showGameOverDialog(String reason) {
     bool isVictory = false;
     bool isDraw = reason.contains("1/2-1/2");
