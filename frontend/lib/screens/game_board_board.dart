@@ -5,7 +5,8 @@ part of 'game_board.dart';
 extension _GameBoardBoard on _GameBoardScreenState {
 
   // ── Board Layout ──────────────────────────────────────────────────────────
-    Widget _buildBoard() {
+  // Draws the grid
+  Widget _buildBoard() {
     double size = MediaQuery.of(context).size.width - 32;
     return Container(
       width: size,
@@ -47,7 +48,8 @@ extension _GameBoardBoard on _GameBoardScreenState {
     );
   }
 
-    Widget _buildSquare(String square, bool isDark, int visualRow, int visualCol) {
+  // Draws each cell
+  Widget _buildSquare(String square, bool isDark, int visualRow, int visualCol) {
     final isSelected = _selectedSquare == square;
     final isLastMove = square == _lastMoveFrom || square == _lastMoveTo;
     final isPossible = _possibleMoves.contains(square);
@@ -119,12 +121,14 @@ extension _GameBoardBoard on _GameBoardScreenState {
   }
 
   // ── Piece Rendering ───────────────────────────────────────────────────────
-    Widget _buildPiece(String square) {
+  // Puts a piece on a cell
+  Widget _buildPiece(String square) {
     final piece = _chess.get(square);
     if (piece == null) return const SizedBox();
     return _renderSvgPiece(piece);
   }
 
+  // Converts piece → SVG widget
   Widget _renderSvgPiece(chess_lib.Piece piece, {bool isSmall = false}) {
     String svgCode = _getSvgForPiece(piece);
     return Padding(
@@ -139,6 +143,7 @@ extension _GameBoardBoard on _GameBoardScreenState {
     );
   }
 
+  // 	Maps piece type → SVG string
   String _getSvgForPiece(chess_lib.Piece piece) {
     final isWhite = piece.color == chess_lib.Color.WHITE;
     switch (piece.type) {
@@ -152,6 +157,7 @@ extension _GameBoardBoard on _GameBoardScreenState {
     }
   }
 
+  // 	Renders a piece choice widget (uses _renderSvgPiece)
   Widget _promotionOption(chess_lib.PieceType type, chess_lib.Color color, String code) {
     return GestureDetector(
       onTap: () => Navigator.of(context).pop(code),

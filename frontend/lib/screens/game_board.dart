@@ -10,8 +10,11 @@ import '../services/websocket_service.dart';
 import '../services/chess_pieces_svg.dart';
 import '../services/profile_service.dart';
 
+// Part files — each handles a focused area of the game screen
 part 'game_board_dialogs.dart'; 
 part 'game_board_board.dart';
+
+// ─── Widget ──────────────────────────────────────────────────────────────────
 
 class GameBoardScreen extends StatefulWidget {
   const GameBoardScreen({super.key});
@@ -20,30 +23,48 @@ class GameBoardScreen extends StatefulWidget {
   State<GameBoardScreen> createState() => _GameBoardScreenState();
 }
 
+// ─── State ────────────────────────────────────────────────────────────────────
+
 class _GameBoardScreenState extends State<GameBoardScreen> {
+
+  // ── Services ─────────────────────
   late WebSocketService _wsService;
   StreamSubscription? _gameSubscription;
+  bool _connected = false;
+
+  // ── Chess Engine ─────────────────
   late chess_lib.Chess _chess;
+  List<String> _fenHistory = []; // Track FENs for analysis
+  String _moveHistory = "";
+
+  // ── Room & Player Info ────────────
   String? _roomID;
+  String? _assignedColor;
   String _myColor = "";
+  Map<String, String>? _whitePlayer;
+  Map<String, String>? _blackPlayer;
+
+  // ── Turn & Selection State ─────────
   String _turn = "white";
   String? _selectedSquare;
   List<String> _possibleMoves = [];
   String? _lastMoveFrom;
   String? _lastMoveTo;
-  List<String> _fenHistory = []; // Track FENs for analysis
-  String _moveHistory = "";
-  String? _assignedColor;
+
+  // ── Opponent Status ────────────────
   bool _opponentLeft = false;
+
+  // ── Rematch State ──────────────────
   bool _opponentWantsRematch = false;
   bool _rematchRequestedByMe = false;
-  StateSetter? _dialogSetState;  
-  bool _connected = false;
-  
+  StateSetter? _dialogSetState;  // Used to update the active dialog from outside
+
+  // ── Board Textures ─────────────────
   // High-fidelity board colors (Modern Wood)
   late ImageProvider _lightSquareImg;
   late ImageProvider _darkSquareImg;
 
+  // ── Lifecycle ────────────────────────────────────────────────────────────────
   @override
   void initState() {
     super.initState();
@@ -55,12 +76,11 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    if (_connected) return; // ← only connect once
+    if (_connected) return; // Guard: connect only once
     _connected = true;
     
+    // Parse route arguments — supports "ID:color" or just "ID"
     final args = ModalRoute.of(context)!.settings.arguments as String;
-    
-    // Support "ID:color" or just "ID"
     if (args.contains(':')) {
       final parts = args.split(':');
       _roomID = parts[0];
@@ -73,34 +93,44 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
     _wsService = Provider.of<WebSocketService>(context, listen: false);
     _setupListeners();
 
+    // Build the WebSocket URL with player profile info
     final profile = ProfileService();
     final name = Uri.encodeComponent(profile.nickname);
     final avatar = profile.avatarIndex.toString();
     final id = profile.deviceId;
 
-    String wsUrl = 'wss://${WebSocketService.serverUrl}/rooms/$_roomID?name=$name&avatar=$avatar&id=$id';
+    String wsUrl = 
+      'wss://${WebSocketService.serverUrl}/rooms/$_roomID?name=$name&avatar=$avatar&id=$id';
 
     if (_assignedColor != null) {
       wsUrl += '&color=$_assignedColor';
     }
     _wsService.connectToGame(wsUrl);
+
+    // Initialize chess engine and record the starting position
     _chess = chess_lib.Chess();
-    _fenHistory = [_chess.fen]; // Initialize starting FEN
+    _fenHistory = [_chess.fen]; 
   }
 
-  Map<String, String>? _whitePlayer;
-  Map<String, String>? _blackPlayer;
+  @override
+  void dispose() {
+    _gameSubscription?.cancel();
+    _wsService.disconnectGame();
+    super.dispose();
+  }
+
+  // ── WebSocket Listener ───────────────────────────────────────────────────────
 
   void _setupListeners() {
     _gameSubscription = _wsService.gameStream.listen((message) {
-      // debugPrint('📩 GAME MSG: $message');
       if (mounted) {
         setState(() {
+          // Color assignment from server
           if (message == "white" || message == "black") {
             _myColor = message;
-            // print('[GAME] Assigned Color: $_myColor');
+          
+          // Opponent profile info received
           } else if (message.startsWith("PLAYER_INFO:")) {
-            // print('[GAME] Player Info Received: $message');
             final parts = message.split(":");
             if (parts.length >= 5) {
               final info = {
@@ -115,8 +145,9 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
                 _blackPlayer = info;
               }
             }
+          
+          // New board position received after a move
           } else if (message.startsWith("BOARD:")) {
-            // print('[GAME] Board Received: $message');
             final parts = message.split(":");
             final fen = parts[1];
             _chess.load(fen);
@@ -129,11 +160,15 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
                 HapticFeedback.mediumImpact();
               }
             }
+          
+          // Move history string for analysis
           } else if (message.startsWith("MOVES:")) {
             _moveHistory = message.substring(6);
+
+          // Server confirmed a full game restart
           } else if (message == "RESTARTED") {
-            print('[GAME] Match Restarted');
-            // If GameOver dialog or any other dialog is open, pop it using rootNavigator for reliability
+            // print('[GAME] Match Restarted');
+            // Close any open dialog first
             if (_dialogSetState != null) {
               Navigator.of(context, rootNavigator: true).pop();
               _dialogSetState = null;
@@ -150,23 +185,31 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
             _opponentWantsRematch = false;
             _rematchRequestedByMe = false;
             HapticFeedback.vibrate();
-            print('[DEBUG] Board Reset Successful and UI Updated');
+            // print('[DEBUG] Board Reset Successful and UI Updated');
+
+          // Opponent clicked rematch — update the open dialog
           } else if (message == "REMATCH_REQUESTED") {
             if (_dialogSetState != null) {
               _opponentWantsRematch = true;
               _dialogSetState!(() {});
             }
+
+          // Our own rematch request was received by the server
           } else if (message == "REMATCH_SENT") {
             if (_dialogSetState != null) {
               _rematchRequestedByMe = true;
               _dialogSetState!(() {});
             }
+
+          // Opponent disconnected during or before the game
           } else if (message.startsWith("OPPONENT_LEFT")) {
-            print('[GAME] Opponent Left Event Received');
+            // print('[GAME] Opponent Left Event Received');
             _opponentLeft = true;
             if (_dialogSetState != null) {
+              // A dialog is already open — let it react to the flag
               _dialogSetState!(() {});
             } else {  
+              // No dialog open — show a standalone "Opponent Left" dialog
               final isGameInProgress = _moveHistory.isNotEmpty;
               showDialog(
                 context: context,
@@ -218,12 +261,18 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
                 ),
               );
             }
+          
+          // Turn ownership changed
           } else if (message.startsWith("TURN:")) {
             _turn = message.substring(5);
-            print('[GAME] Turn Received: $_turn');
+            // print('[GAME] Turn Received: $_turn');
+
+          // Game ended — show result dialog
           } else if (message.startsWith("GAMEOVER:")) {
             _showGameOverDialog(message.substring(9));
             HapticFeedback.vibrate();
+
+          // Server error — display as a snackbar
           } else if (message.startsWith("ERROR:")) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(message)),
@@ -234,22 +283,15 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
     });
   }
 
-  // void _showResignDialog() {
-  // }
+  // ── Move Logic ────────────────────────────────────────────────────────────────
 
-  @override
-  void dispose() {
-    _gameSubscription?.cancel();
-    _wsService.disconnectGame();
-    super.dispose();
-  }
-
+  // Handles a tap on a board square — select, deselect, or move
   void _onSquareTap(String square) {
     if (_turn != _myColor) return;
 
     setState(() {
       if (_selectedSquare == null) {
-        // Select piece
+        // First tap — select the piece if it belongs to us
         final piece = _chess.get(square);
         if (piece != null && 
             ((_myColor == "white" && piece.color == chess_lib.Color.WHITE) ||
@@ -260,18 +302,19 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
               .toList();
         }
       } else {
-        // Try to move
         if (square == _selectedSquare) {
+          // Tap same square — deselect
           _selectedSquare = null;
           _possibleMoves = [];
         } else if (_possibleMoves.contains(square)) {
+          // Valid target — execute the move
           final piece = _chess.get(_selectedSquare!);
           final fromSquare = _selectedSquare!; // Capture it!
           _handleMove(fromSquare, square, piece);
           _selectedSquare = null;
           _possibleMoves = [];
         } else {
-          // Select another piece
+          // Tap a different friendly piece — switch selection
           final piece = _chess.get(square);
           if (piece != null && 
               ((_myColor == "white" && piece.color == chess_lib.Color.WHITE) ||
@@ -289,6 +332,7 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
     });
   }
 
+  // Sends the move to the server; prompts for promotion if needed
   void _handleMove(String from, String to, chess_lib.Piece? piece) async {
     String moveStr = "$from$to";
     
@@ -302,30 +346,24 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
         if (promotion != null) {
           moveStr = "$from$to$promotion";
         } else {
-          return; // Cancelled
+          return; // Player cancelled the promotion picker
         }
       }
     }
-    
-    print('[GAME] Sending Move: $moveStr');
+    // print('[GAME] Sending Move: $moveStr');
     _wsService.sendMove(moveStr);
   }
 
-  // Future<String?> _showPromotionDialog(chess_lib.Color color) async {
-  // }
-
-  // Widget _promotionOption(chess_lib.PieceType type, chess_lib.Color color, String code) {
-  // }
-
-//   void _showGameOverDialog(String reason) {
-// }
+  // ── Build ─────────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     final bool isWhite = _myColor == "white" || _myColor == "";
+
     return Scaffold(
       backgroundColor: const Color(0xFF262421),
       appBar: AppBar(
+        // Show room ID in the title, with special cases for invite/bot rooms
         title: Text(
           _roomID == null || _roomID!.isEmpty
             ? "Chess"
@@ -358,6 +396,7 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Opponent panel always on top, our panel on the bottom
               _buildPlayerPanel(isWhite ? "black" : "white"),
               const SizedBox(height: 20),
               _buildBoard(),
@@ -370,41 +409,39 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
     );
   }
 
+  // ── Player Panel ──────────────────────────────────────────────────────────────
+
   Widget _buildPlayerPanel(String color) {
     final bool isMe = _myColor == color;
     final bool isMyTurn = _turn == color;
-    
     final player = (color == 'white') ? _whitePlayer : _blackPlayer;
-
     final profile = ProfileService();
 
-    // Practice mode: player is white, bot is black
+    // Detect practice mode: we are white and there is no black player connected
     final bool isBotOpponent =
-        _myColor == 'white' &&
-        color == 'black' &&
-        player == null;
+        _myColor == 'white' && color == 'black' && player == null;
 
     final String label = isBotOpponent
         ? 'Bot'
         : (player?['name'] ?? (isMe ? profile.nickname : 'Opponent'));
 
+    // Resolve avatar index safely
     int? avatarIndex;
     final String? avatarIndexStr = player?['avatar'];
     if (avatarIndexStr != null) {
       avatarIndex = int.tryParse(avatarIndexStr); // tryParse won't crash on bad input
     } else if (isMe) {
-      avatarIndex = profile.avatarIndex; // show our own avatar while waiting
+      avatarIndex = profile.avatarIndex; 
     }
     
-    // Validate the index is in range
     final avatars = ProfileService.getAvailableAvatars();
     final bool hasValidAvatar = 
         avatarIndex != null 
         && avatarIndex >= 0 
         && avatarIndex < avatars.length;
     
-    // Calculate captured pieces
-    Map<chess_lib.PieceType, int> captured = _getCapturedPieces(
+    // Count pieces the opponent has captured from this player
+    final captured = _getCapturedPieces(
       color == "white" ? chess_lib.Color.BLACK : chess_lib.Color.WHITE);
 
     return Container(
@@ -415,6 +452,7 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
       ),
       child: Row(
         children: [
+          // Avatar circle
           Container(
             width: 40,
             height: 40,
@@ -439,6 +477,7 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
                   ),          
           ),
           const SizedBox(width: 12),
+          // Name and captured pieces
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -458,6 +497,7 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
               ],
             ),
           ),
+          // Active turn indicator
           if (isMyTurn)
             const Icon(Icons.timer, color: Color(0xFFE94560), size: 18),
         ],
@@ -465,6 +505,7 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
     );
   }
 
+  // Returns how many pieces of [colorOfOwner] are missing from the board
   Map<chess_lib.PieceType, int> _getCapturedPieces(chess_lib.Color colorOfOwner) {
     final initialCounts = {
       chess_lib.PieceType.PAWN: 8,
@@ -482,6 +523,7 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
       chess_lib.PieceType.QUEEN: 0,
     };
 
+    // Count surviving pieces on the board
     for (var i = 0; i < 64; i++) {
       final piece = _chess.get(_indexToSquare(i));
       if (piece != null && piece.color == colorOfOwner) {
@@ -491,7 +533,8 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
       }
     }
 
-    Map<chess_lib.PieceType, int> captured = {};
+    // Captured = started with X, now only Y remain
+    final Map<chess_lib.PieceType, int> captured = {};
     initialCounts.forEach((type, initial) {
       int count = initial - (currentCounts[type] ?? 0);
       if (count > 0) captured[type] = count;
@@ -499,8 +542,10 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
     return captured;
   }
 
+  // Renders a row of small piece icons showing what has been captured
   Widget _buildCapturedRow(Map<chess_lib.PieceType, int> captured, chess_lib.Color color) {
     List<Widget> pieces = [];
+
     captured.forEach((type, count) {
       pieces.add(
         Padding(
@@ -533,18 +578,16 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
     return Wrap(children: pieces);
   }
 
-  // Widget _buildBoard() {
-  // }
+  // ── Stubs (implemented in part files) ─────────────────────────────────────────
 
-  // Widget _buildSquare(String square, bool isDark, int visualRow, int visualCol) {
-  // }
-
-  // Widget _buildPiece(String square) {
-  // }
-
-  // String _getSvgForPiece(chess_lib.Piece piece) {
-  // }
-
-  // String _indexToSquare(int index) {
-  // }
+  // _buildBoard()               → game_board_board.dart
+  // _buildSquare()              → game_board_board.dart
+  // _buildPiece()               → game_board_board.dart
+  // _renderSvgPiece()           → game_board_board.dart
+  // _getSvgForPiece()           → game_board_board.dart
+  // _promotionOption()          → game_board_board.dart
+  // _indexToSquare()            → game_board_board.dart
+  // _showResignDialog()         → game_board_dialogs.dart
+  // _showPromotionDialog()      → game_board_dialogs.dart
+  // _showGameOverDialog()       → game_board_dialogs.dart
 }
