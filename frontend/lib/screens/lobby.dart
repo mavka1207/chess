@@ -222,8 +222,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 Navigator.of(context).pop();
                 _resetWarmup();
               },
-              child: const Text("RESTART", 
-              style: TextStyle(color: Color(0xFFE94560), fontWeight: FontWeight.bold)),
+              style: TextButton.styleFrom(
+                backgroundColor: const Color(0xFFE94560),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text("RESTART", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         ),

@@ -1,14 +1,14 @@
 # Flutter Go Chess Application
 
-A real-time multiplayer chess application built with a **Flutter** frontend and a **Go (Golang)** backend using WebSockets.
+A real-time multiplayer chess application built with a **Flutter** frontend and a **Go (Golang)** backend communicating over WebSockets.
 
 ## 🌟 Features
 
-*   **Public Matchmaking**: Automatically pairs you with another player looking for a match.
-*   **Private Rooms**: Create a private room with a generated code to play with a friend.
-*   **Practice Bot**: Play locally against a chess bot to hone your skills.
-*   **Real-time Communication**: Lightning-fast game state synchronization via WebSockets.
-*   **Public Tunneling**: Configured to bypass local network restrictions by exposing the backend over the internet via `ngrok`.
+*   **Public Matchmaking**: Automatically pairs you with another online player.
+*   **Private Rooms** — Use **CREATE PRIVATE** to generate a 6-character room code, share it externally (e.g. via text or chat), and your friend joins anytime using **JOIN PRIVATE**.
+*   **Practice Bot**: Play against a server-side bot to explore openings or test the app.
+*   **Real-time Sync**: Board state synchronized instantly via WebSockets.
+*   **ngrok Tunnel**: Backend exposed over the internet to bypass local network restrictions on mobile via `ngrok`.
 
 ## 🏗️ Architecture
 
@@ -22,17 +22,43 @@ To run this project locally, you will need:
 *   [Go](https://go.dev/doc/install) installed.
 *   [ngrok](https://ngrok.com/download) installed and authenticated (`ngrok config add-authtoken <your-token>`).
 
+##  📁 Project Structure
+```bash
+chess-app/
+    ├── backend/
+    │   ├── main.go
+    │   ├── game.go
+    │   └── room.go
+    └── frontend/
+        ├── assets/
+        ├── lib/
+            ├── screens/
+            │   ├── main_menu.dart    
+            │   ├── profile_setup.dart 
+            │   ├── lobby.dart 
+            │   ├── game_board.dart    
+            │   ├── game_board_board.dart 
+            │   ├── game_board_dialogs.dart 
+            │   └── analysis_screen.dart   
+            ├── services/
+            │   ├── chess_pieces_svg.dart 
+            │   ├── profile_service.dart 
+            │   └── websocket_service.dart          
+            └── main.dart               
+```
+
+
 ## 🛠️ How to Run the Project
 
 ### 1. Start the Backend & Tunnel
-
-We use an automated script that simultaneously spins up the backend Go server on port `8080` and exposes it securely over the internet using `ngrok`.
 
 Run the following command from the root directory:
 
 ```bash
 ./start_server.sh
 ```
+
+This starts the Go server on port `8080` and opens the ngrok tunnel simultaneously.
 
 *Note: The script is pre-configured to use the static ngrok domain `colory-kaci-dreadingly.ngrok-free.dev`.*
 
@@ -53,3 +79,29 @@ flutter run --release
 
 Modern mobile OSes (like iOS 14+) often block apps from communicating with local network servers directly (e.g., `192.168.x.x`). 
 This project overcomes this by routing all game traffic securely through the `ngrok` public tunnel, circumventing internal router firewalls entirely.
+
+## 🔧 Development Tips
+
+### Restarting the backend manually
+
+If you make changes to the Go code and need to restart the server:
+
+```bash
+cd backend
+
+# Find the process using port 8080
+lsof -i :8080
+
+# Kill it using the PID from the output above
+kill -9 <PID>
+
+# Start the server again
+go run .
+```
+
+> **Note:** `lsof -i :8080` shows a table — look for the value in the `PID` column, not the port number.
+
+## Authors:
+[Kateryna Ovsiienko](https://github.com/kateryna256)
+
+[Mayuree reunsati](https://github.com/mareerray)

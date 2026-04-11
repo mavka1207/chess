@@ -251,7 +251,6 @@ func (gm *GameManager) HandleGame(w http.ResponseWriter, r *http.Request) {
 }
 
 // ── Lobby Message Handler ─────────────────────────────────────────────────────
-// ── Lobby Message Handler ─────────────────────────────────────────────────────
 
 // handleLobbyMessage routes incoming lobby commands to the correct action.
 func (gm *GameManager) handleLobbyMessage(sender *Player, msg string) {
