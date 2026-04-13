@@ -3,7 +3,6 @@
 
 import 'package:chess/chess.dart' as chess_lib;
 
-
 class PieceSvg {
   PieceSvg._();
 

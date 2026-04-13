@@ -1,6 +1,10 @@
+// Widget → Controllers & Services → Profile State → Lifecycle → Actions → Build
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../services/profile_service.dart';
+
+// ─── Widget ───────────────────────────────────────────────────────────────────
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -9,20 +13,39 @@ class ProfileSetupScreen extends StatefulWidget {
   State<ProfileSetupScreen> createState() => _ProfileSetupScreenState();
 }
 
+// ─── Widget ───────────────────────────────────────────────────────────────────
+
 class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
+
+  // ── Controllers & Services ───────────────────
   final TextEditingController _nicknameController = TextEditingController();
-  int _selectedAvatarIndex = 0;
   final ProfileService _profileService = ProfileService();
+
+  // ── Profile State ────────────────────────────
+  int _selectedAvatarIndex = 0;
+
+  // ── Lifecycle ─────────────────────────────────────────────────────────────────
 
   @override
   void initState() {
     super.initState();
+    // Pre-fill with existing profile data so returning users see their current settings
     _nicknameController.text = _profileService.nickname;
     _selectedAvatarIndex = _profileService.avatarIndex;
   }
 
+  @override
+  void dispose() {
+    _nicknameController.dispose();
+    super.dispose();
+  }
+
+  // ── Actions ───────────────────────────────────────────────────────────────────
+
+  // Validates, saves the profile, and navigates to the main menu
   void _saveProfile() {
     final nickname = _nicknameController.text.trim();
+
     if (nickname.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a nickname'),
@@ -38,6 +61,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     Navigator.pushReplacementNamed(context, '/');
   }
 
+  // ── Build ─────────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     final avatars = ProfileService.getAvailableAvatars();
@@ -50,6 +75,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+
+              // ── Page title ───────────────────────────────────────────────
               const SizedBox(height: 40),
               const Text(
                 'PROFILE SETUP',
@@ -67,7 +94,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               ),
               const SizedBox(height: 48),
               
-              // Nickname Input
+              // ── Nickname input ────────────────────────────────────────────  
               TextField(
                 controller: _nicknameController,
                 style: const TextStyle(color: Colors.white, fontSize: 18),
@@ -86,8 +113,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   fillColor: Colors.white.withValues(alpha: 0.05),
                 ),
               ),
-              
               const SizedBox(height: 40),
+
+              // ── Avatar selection label ────────────────────────────────────────────
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -101,7 +129,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               ),
               const SizedBox(height: 16),
               
-              // Avatar Grid
+              // ── Avatar grid ───────────────────────────────────────────────
               Expanded(
                 child: GridView.builder(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -134,7 +162,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 ),
               ),
               
-              // Save Button
+              // ── Save button ───────────────────────────────────────────────              
               Padding(
                 padding: const EdgeInsets.only(bottom: 24.0),
                 child: SizedBox(

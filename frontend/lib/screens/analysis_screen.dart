@@ -1,12 +1,16 @@
+// Widget → State → Lifecycle → Navigation → Build → Board → Controls
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:chess/chess.dart' as chess_lib;
 import '../services/chess_pieces_svg.dart';
 
+// ─── Widget ───────────────────────────────────────────────────────────────────
+
 class AnalysisScreen extends StatefulWidget {
-  final List<String> fenHistory;
-  final String moveHistory;
-  final String myColor;
+  final List<String> fenHistory;  // All board positions from the game
+  final String moveHistory;       // Full move list string e.g. "1. e4 e5 2. Nf3"
+  final String myColor;           // Used to flip the board for black players
 
   const AnalysisScreen({
     super.key,
@@ -19,11 +23,16 @@ class AnalysisScreen extends StatefulWidget {
   State<AnalysisScreen> createState() => _AnalysisScreenState();
 }
 
+// ─── State ────────────────────────────────────────────────────────────────────
+
 class _AnalysisScreenState extends State<AnalysisScreen> {
-  int _currentIndex = 0;
-  late chess_lib.Chess _chess;
+
+  // ── Analysis State ───────────────────────────
+  int _currentIndex = 0;        // Which position in fenHistory we are viewing
+  late chess_lib.Chess _chess;  // Chess engine loaded with the current position
   final ScrollController _scrollController = ScrollController();
 
+  // ── Lifecycle ─────────────────────────────────────────────────────────────────
   @override
   void initState() {
     super.initState();
@@ -31,14 +40,27 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     _chess = chess_lib.Chess.fromFEN(widget.fenHistory[_currentIndex]);
   }
 
+  @override
+  void dispose() {  
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  // ── Navigation ────────────────────────────────────────────────────────────────
+
+  // Jumps to a specific move by index and reloads the board position
   void _goToIndex(int index) {
+    debugPrint('🔍 _goToIndex called: index=$index, fenHistory.length=${widget.fenHistory.length}');
     if (index >= 0 && index < widget.fenHistory.length) {
       setState(() {
+        // Start at the final position of the game
         _currentIndex = index;
         _chess = chess_lib.Chess.fromFEN(widget.fenHistory[index]);
       });
-    }
+    } 
   }
+
+  // ── Build ─────────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -56,19 +78,126 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       body: Column(
         children: [
           const SizedBox(height: 20),
+
+          // ── Board at the selected position ────────────────
           _buildBoard(),
           const SizedBox(height: 30),
+
+          // ── Prev / Next controls ──────────────────────────
           _buildControls(),
-          Expanded(child: _MoveList(
+
+          // ── Scrollable move list ──────────────────────────
+          Expanded(child: _MoveHistoryList(
             moveHistory: widget.moveHistory,
             currentIndex: _currentIndex,
             onMoveTap: _goToIndex,
+            totalMoves: widget.fenHistory.length - 1,
           )),
         ],
       ),
     );
   }
 
+  // ── Board Widget ──────────────────────────────────────────────────────────────
+
+  // Renders the board for the currently selected position
+  Widget _buildBoard() {
+    final double size = MediaQuery.of(context).size.width - 32;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFF33312E), width: 2),
+      ),
+      child: GridView.builder(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 8,
+        ),
+        itemCount: 64,
+        physics: const NeverScrollableScrollPhysics(),
+        itemBuilder: (context, index) {
+          final int row = index ~/ 8;
+          final int col = index % 8;
+
+          String square;
+          bool isDark;
+          int fRow, fCol;
+
+          // Flip board orientation for black players
+          if (widget.myColor == "black") {
+            fRow = row;
+            fCol = 7 - col;
+            square = "${String.fromCharCode(97 + fCol)}${fRow + 1}";
+            isDark = (fRow + fCol) % 2 == 0;
+          } else {
+            fRow = 7 - row;
+            fCol = col;
+            square = "${String.fromCharCode(97 + fCol)}${fRow + 1}";
+            isDark = (fRow + fCol) % 2 == 0;
+          }
+
+          final piece = _chess.get(square);
+          final Color labelColor = isDark
+              ? const Color(0xFFF0D9B5)
+              : const Color(0xFFB58863);
+
+          return Container(
+            color: isDark
+                ? const Color(0xFFB58863)
+                : const Color(0xFFF0D9B5),
+            child: Stack(
+              children: [
+
+                // Rank number — left edge, only on col 0
+                if (col == 0)
+                  Positioned(
+                    top: 2,
+                    left: 2,
+                    child: Text(
+                      "${fRow + 1}",
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: labelColor,
+                      ),
+                    ),
+                  ),
+
+                // File letter — bottom edge, only on last row
+                if (row == 7)
+                  Positioned(
+                    bottom: 2,
+                    right: 2,
+                    child: Text(
+                      String.fromCharCode(97 + fCol),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: labelColor,
+                      ),
+                    ),
+                  ),
+
+                // Chess piece
+                if (piece != null)
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: SvgPicture.string(PieceSvg.getSvgForPiece(piece)),
+                    ),
+                  ),
+
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+  
+  // ── Controls Widget ───────────────────────────────────────────────────────────
+
+  // Navigation bar: jump to start, step back, move counter, step forward, jump to end
   Widget _buildControls() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -103,113 +232,67 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       ],
     );
   }
-
-  Widget _buildBoard() {
-    double size = MediaQuery.of(context).size.width - 32;
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFF33312E), width: 2),
-      ),
-      child: GridView.builder(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 8),
-        itemCount: 64,
-        physics: const NeverScrollableScrollPhysics(),
-        itemBuilder: (context, index) {
-          int row = index ~/ 8;
-          int col = index % 8;
-          
-          String square;
-          bool isDark;
-          if (widget.myColor == "black") {
-            int fRow = row; 
-            int fCol = 7 - col;
-            square = "${String.fromCharCode(97 + fCol)}${fRow + 1}";
-            isDark = (fRow + fCol) % 2 == 0;
-          } else {
-            int fRow = 7 - row;
-            int fCol = col;
-            square = "${String.fromCharCode(97 + fCol)}${fRow + 1}";
-            isDark = (fRow + fCol) % 2 == 0;
-          }
-          
-          final piece = _chess.get(square);
-          return Container(
-            color: isDark ? const Color(0xFFB58863) : const Color(0xFFF0D9B5),
-            child: piece == null ? null : Padding(
-              padding: const EdgeInsets.all(4.0),
-              child: SvgPicture.string(_getSvgForPiece(piece)),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  String _getSvgForPiece(chess_lib.Piece piece) {
-    final isWhite = piece.color == chess_lib.Color.WHITE;
-    switch (piece.type) {
-      case chess_lib.PieceType.PAWN: return isWhite ? PieceSvg.wP : PieceSvg.bP;
-      case chess_lib.PieceType.ROOK: return isWhite ? PieceSvg.wR : PieceSvg.bR;
-      case chess_lib.PieceType.KNIGHT: return isWhite ? PieceSvg.wN : PieceSvg.bN;
-      case chess_lib.PieceType.BISHOP: return isWhite ? PieceSvg.wB : PieceSvg.bB;
-      case chess_lib.PieceType.QUEEN: return isWhite ? PieceSvg.wQ : PieceSvg.bQ;
-      case chess_lib.PieceType.KING: return isWhite ? PieceSvg.wK : PieceSvg.bK;
-      default: return "";
-    }
-  }
 }
 
-class _MoveList extends StatelessWidget {
+// ─── Move List Widget ─────────────────────────────────────────────────────────
+
+// Displays all moves as tappable chips; highlights the currently viewed move
+class _MoveHistoryList extends StatelessWidget {
   final String moveHistory;
   final int currentIndex;
   final Function(int) onMoveTap;
+  final int totalMoves;
 
-  const _MoveList({
+  const _MoveHistoryList({
     required this.moveHistory,
     required this.currentIndex,
     required this.onMoveTap,
+    required this.totalMoves,
   });
 
   @override
   Widget build(BuildContext context) {
-    // Parse moves from history: "1. e4 e5 2. Nf3 Nc6"
-    List<String> tokens = moveHistory.split(" ").where((s) => s.isNotEmpty).toList();
-    List<Widget> chips = [];
+    // Tokenize the move string — skip move numbers like "1.", "2.", etc.
+    final List<String> tokens = moveHistory
+      .split(" ")
+      .where((s) => s.isNotEmpty && !s.contains("."))
+      .toList();
+
+    debugPrint('🔍 tokens: $tokens');
     
-    int moveIndex = 1; // 0 is start, 1 is after first move
-    for (int i = 0; i < tokens.length; i++) {
-      final token = tokens[i];
-      if (token.contains(".")) {
-        // Just a move number, skip
-      } else {
-        final currentIdx = moveIndex;
-        final bool isSelected = currentIndex == currentIdx;
-        chips.add(
-          GestureDetector(
-            onTap: () => onMoveTap(currentIdx),
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFFE94560) : Colors.white10,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                token,
-                style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.white70,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
+    // Build a chip for each move; moveIndex starts at 1 (0 = starting position)
+    final List<Widget> chips = [];
+    int moveIndex = 1; 
+
+    for (final token in tokens) {
+      // Stop if we exceed the number of recorded board positions
+      if (moveIndex > totalMoves) break;
+
+      final currentIdx = moveIndex;
+      final bool isSelected = currentIndex == currentIdx;
+      chips.add(
+        GestureDetector(
+          onTap: () => onMoveTap(currentIdx),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: isSelected ? const Color(0xFFE94560) : Colors.white10,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              token,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.white70,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
           ),
-        );
-        moveIndex++;
-      }
+        ),
+      );
+      moveIndex++;
     }
-
+    
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.all(16),

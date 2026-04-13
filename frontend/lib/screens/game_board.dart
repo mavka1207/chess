@@ -153,8 +153,14 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
           } else if (message.startsWith("BOARD:")) {
             final parts = message.split(":");
             final fen = parts[1];
+            debugPrint('🔍 BOARD received FEN: $fen');
             _chess.load(fen);
-            _fenHistory.add(fen); 
+
+            // Ignore the server's initial board message — we already have the starting position
+            if (_fenHistory.last != fen) {
+              _fenHistory.add(fen);
+            }
+
             if (parts.length > 2) {
               final move = parts[2];
               if (move.length >= 4) {
@@ -170,7 +176,6 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
 
           // Server confirmed a full game restart
           } else if (message == "RESTARTED") {
-            // print('[GAME] Match Restarted');
             // Close any open dialog first
             if (_dialogSetState != null) {
               Navigator.of(context, rootNavigator: true).pop();
@@ -188,7 +193,6 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
             _opponentWantsRematch = false;
             _rematchRequestedByMe = false;
             HapticFeedback.vibrate();
-            // print('[DEBUG] Board Reset Successful and UI Updated');
 
           // Opponent clicked rematch — update the open dialog
           } else if (message == "REMATCH_REQUESTED") {
@@ -353,7 +357,6 @@ class _GameBoardScreenState extends State<GameBoardScreen> {
         }
       }
     }
-    // print('[GAME] Sending Move: $moveStr');
     _wsService.sendMove(moveStr);
   }
 

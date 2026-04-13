@@ -142,12 +142,15 @@ class _LobbyScreenState extends State<LobbyScreen> {
     }
 
     setState(() {
-      final success = _chess.move({
+      final Map<String, String> move = {
         "from": from, 
         "to": to, 
-        if (promotion != null) "promotion": promotion,
-        });
+      };
       
+      if (promotion != null) move["promotion"] = promotion;
+
+      final success = _chess.move(move);
+
       if (success) {
         _lastMoveFrom = from;
         _lastMoveTo = to;
@@ -219,8 +222,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 Navigator.of(context).pop();
                 _resetWarmup();
               },
-              child: const Text("RESTART", 
-              style: TextStyle(color: Color(0xFFE94560), fontWeight: FontWeight.bold)),
+              style: TextButton.styleFrom(
+                backgroundColor: const Color(0xFFE94560),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text("RESTART", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
